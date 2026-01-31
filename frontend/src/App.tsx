@@ -13,6 +13,9 @@ function App() {
   const [nodeHierarchy, setNodeHierarchy] = useState<NodeWithLevel[]>([])
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
   const [showHints, setShowHints] = useState<Record<string, boolean>>({})
+  const [triedNodes, setTriedNodes] = useState<Record<string, boolean>>({}) // 試行済みノード
+  const [decidedNodes, setDecidedNodes] = useState<Record<string, number>>({}) // 決定済みノード（決定時刻をタイムスタンプで保存）
+  const [showPathModal, setShowPathModal] = useState(false) // モーダル表示状態
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -66,11 +69,49 @@ function App() {
       })
       
       setNodeHierarchy([...filteredHierarchy, ...newNodes])
+      
+      // 決定済みノードとして記録（タイムスタンプを保存）
+      setDecidedNodes({ ...decidedNodes, [nodeId]: Date.now() })
     }
   }
 
   const toggleHint = (nodeId: string) => {
     setShowHints({ ...showHints, [nodeId]: !showHints[nodeId] })
+  }
+
+  const toggleTried = (nodeId: string) => {
+    setTriedNodes({ ...triedNodes, [nodeId]: !triedNodes[nodeId] })
+  }
+
+  // 選択されたパスを取得（rootからleafまで）
+  const getSelectedPath = (): NodeWithLevel[] => {
+    const path: NodeWithLevel[] = []
+    const levelGroups = getNodesByLevel()
+    
+    // 各レベルで選択済みのノードを1つずつ取得
+    for (let level = 0; level <= Math.max(...Object.keys(levelGroups).map(Number)); level++) {
+      const nodesAtLevel = levelGroups[level]
+      if (!nodesAtLevel) break
+      
+      // このレベルで決定済み、かつ失敗マークがついていないノードを探す
+      const validNodes = nodesAtLevel.filter(n => 
+        decidedNodes[n.node.id] && !triedNodes[n.node.id]
+      )
+      
+      if (validNodes.length === 0) {
+        // 有効なノードがない場合は終了
+        break
+      }
+      
+      // 最後に決定したノードを選択（タイムスタンプが最大のもの）
+      const selectedNode = validNodes.reduce((latest, current) => {
+        return decidedNodes[current.node.id] > decidedNodes[latest.node.id] ? current : latest
+      })
+      
+      path.push(selectedNode)
+    }
+    
+    return path
   }
 
   // レベルごとにノードをグループ化
@@ -95,8 +136,42 @@ function App() {
   return (
     <div style={{ padding: '40px', fontFamily: 'sans-serif', minHeight: '100vh' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        <h1>{tree.title}</h1>
-        <p style={{ color: '#666', marginBottom: '40px' }}>{tree.description}</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h1>{tree.title}</h1>
+            <p style={{ color: '#666', marginBottom: '40px' }}>{tree.description}</p>
+          </div>
+          
+          {/* Flag獲得ボタン */}
+          <button
+            onClick={() => setShowPathModal(true)}
+            style={{
+              padding: '12px 30px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: '#28a745',
+              color: 'white',
+              cursor: 'pointer',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#218838'
+              e.currentTarget.style.transform = 'translateY(-2px)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#28a745'
+              e.currentTarget.style.transform = 'translateY(0)'
+            }}
+          >
+            🚩 Flag獲得
+          </button>
+        </div>
 
         {/* レベルごとに表示 */}
         {Array.from({ length: maxLevel + 1 }, (_, level) => (
@@ -119,6 +194,7 @@ function App() {
                 }}>
                   {nodesByLevel[level].map((nodeWithLevel) => {
                     const node = nodeWithLevel.node
+                    const isTried = triedNodes[node.id]
                     return (
                       <div 
                         key={node.id}
@@ -129,10 +205,41 @@ function App() {
                           backgroundColor: '#f9f9f9',
                           flex: '1 1 300px',
                           minWidth: '300px',
-                          maxWidth: '400px'
+                          maxWidth: '400px',
+                          opacity: isTried ? 0.5 : 1,
+                          filter: isTried ? 'grayscale(80%)' : 'none',
+                          transition: 'opacity 0.3s, filter 0.3s',
+                          position: 'relative'
                         }}
                       >
-                        <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>{node.question}</h3>
+                        {/* 試行済みボタン */}
+                        <button
+                          onClick={() => toggleTried(node.id)}
+                          style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            padding: '4px 10px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            borderRadius: '4px',
+                            border: isTried ? '2px solid #dc3545' : '2px solid #6c757d',
+                            backgroundColor: isTried ? '#dc3545' : 'white',
+                            color: isTried ? 'white' : '#6c757d',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {isTried ? '✗ 試行済み' : '✗ 失敗'}
+                        </button>
+
+                        <h3 style={{ 
+                          marginBottom: '15px', 
+                          fontSize: '16px',
+                          marginRight: '80px'
+                        }}>
+                          {node.question}
+                        </h3>
                         
                         {node.hint && (
                           <div style={{ marginBottom: '15px' }}>
@@ -219,6 +326,145 @@ function App() {
           </div>
         ))}
       </div>
+
+      {/* モーダル */}
+      {showPathModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+            animation: 'fadeIn 0.3s'
+          }}
+          onClick={() => setShowPathModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '40px',
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 閉じるボタン */}
+            <button
+              onClick={() => setShowPathModal(false)}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#999',
+                padding: '5px 10px'
+              }}
+            >
+              ×
+            </button>
+
+            <h2 style={{ marginBottom: '30px', color: '#28a745', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              🚩 攻略パス
+            </h2>
+
+            {getSelectedPath().length === 0 ? (
+              <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>
+                まだノードが選択されていません
+              </p>
+            ) : (
+              <div>
+                {getSelectedPath().map((nodeWithLevel, index) => {
+                  const node = nodeWithLevel.node
+                  const selectedOption = node.options.find(
+                    opt => opt.id === selectedOptions[node.id]
+                  )
+                  
+                  return (
+                    <div key={node.id}>
+                      <div
+                        style={{
+                          border: '2px solid #28a745',
+                          borderRadius: '8px',
+                          padding: '20px',
+                          backgroundColor: '#f8f9fa',
+                          marginBottom: '15px'
+                        }}
+                      >
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#28a745', 
+                          fontWeight: 'bold',
+                          marginBottom: '8px'
+                        }}>
+                          STEP {index + 1}
+                        </div>
+                        <div style={{ 
+                          fontSize: '16px', 
+                          fontWeight: 'bold',
+                          marginBottom: '10px'
+                        }}>
+                          {node.question}
+                        </div>
+                        {selectedOption && (
+                          <div style={{
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            padding: '8px 15px',
+                            borderRadius: '4px',
+                            display: 'inline-block',
+                            fontSize: '14px',
+                            fontWeight: 'bold'
+                          }}>
+                            ✓ {selectedOption.label}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 矢印 */}
+                      {index < getSelectedPath().length - 1 && (
+                        <div style={{ 
+                          textAlign: 'center', 
+                          fontSize: '24px',
+                          color: '#28a745',
+                          margin: '10px 0'
+                        }}>
+                          ↓
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                <div style={{ 
+                  marginTop: '30px', 
+                  padding: '15px',
+                  backgroundColor: '#d4edda',
+                  borderRadius: '8px',
+                  textAlign: 'center',
+                  color: '#155724',
+                  fontWeight: 'bold'
+                }}>
+                  🎉 合計 {getSelectedPath().length} ステップ
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
