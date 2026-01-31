@@ -3,17 +3,17 @@
 export interface Option {
   id: string;
   label: string;
-  next_node_id?: string;
+  next_node_ids?: string[];  // 複数の次ノードID
 }
 
 export interface Node {
   id: string;
   question: string;
-  command?: string;
+  hint?: string;
+  hint_type?: 'command' | 'text';
   type: string;  // 'select', 'multiselect', 'text'
   options: Option[];
   description?: string;
-  hint?: string;
 }
 
 export interface Tree {
