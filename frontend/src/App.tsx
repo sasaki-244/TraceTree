@@ -8,16 +8,45 @@ interface NodeWithLevel {
   parentId: string | null
 }
 
+// タブのデータ型
+interface TabData {
+  id: string
+  name: string
+  nodeHierarchy: NodeWithLevel[]
+  selectedOptions: Record<string, string>
+  showHints: Record<string, boolean>
+  triedNodes: Record<string, boolean>
+  decidedNodes: Record<string, number>
+}
+
 function App() {
   const [tree, setTree] = useState<Tree | null>(null)
-  const [nodeHierarchy, setNodeHierarchy] = useState<NodeWithLevel[]>([])
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
-  const [showHints, setShowHints] = useState<Record<string, boolean>>({})
-  const [triedNodes, setTriedNodes] = useState<Record<string, boolean>>({}) // 試行済みノード
-  const [decidedNodes, setDecidedNodes] = useState<Record<string, number>>({}) // 決定済みノード（決定時刻をタイムスタンプで保存）
-  const [showPathModal, setShowPathModal] = useState(false) // モーダル表示状態
+  const initialTabId = `tab-${Date.now()}`
+  const [tabs, setTabs] = useState<TabData[]>([
+    {
+      id: initialTabId,
+      name: 'Set 1',
+      nodeHierarchy: [],
+      selectedOptions: {},
+      showHints: {},
+      triedNodes: {},
+      decidedNodes: {}
+    }
+  ])
+  const [activeTabId, setActiveTabId] = useState(initialTabId)
+  const [showPathModal, setShowPathModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // アクティブなタブのデータを取得
+  const activeTab = tabs.find(tab => tab.id === activeTabId)
+  
+  // アクティブなタブのデータを更新するヘルパー関数
+  const updateActiveTab = (updates: Partial<TabData>) => {
+    setTabs(tabs.map(tab => 
+      tab.id === activeTabId ? { ...tab, ...updates } : tab
+    ))
+  }
 
   useEffect(() => {
     // APIからツリーデータを取得
@@ -28,12 +57,15 @@ function App() {
       })
       .then((data: Tree) => {
         setTree(data)
-        // 最初のノードを追加（レベル0）
-        setNodeHierarchy([{
-          node: data.nodes[data.root_node_id],
-          level: 0,
-          parentId: null
-        }])
+        // 最初のノードを追加（Set 1に）
+        const rootNode = data.nodes[data.root_node_id]
+        updateActiveTab({
+          nodeHierarchy: [{
+            node: rootNode,
+            level: 0,
+            parentId: null
+          }]
+        })
         setLoading(false)
       })
       .catch(err => {
@@ -42,10 +74,53 @@ function App() {
       })
   }, [])
 
-  const handleDecision = (nodeId: string, currentLevel: number) => {
-    if (!tree) return
+  // 新しいタブを追加
+  const addNewTab = () => {
+    if (tabs.length >= 10) return // 最大10個
+    
+    const newTabNumber = tabs.length + 1
+    const newTab: TabData = {
+      id: `tab-${Date.now()}`, // タイムスタンプでユニークなIDを生成
+      name: `Set ${newTabNumber}`,
+      nodeHierarchy: tree ? [{
+        node: tree.nodes[tree.root_node_id],
+        level: 0,
+        parentId: null
+      }] : [],
+      selectedOptions: {},
+      showHints: {},
+      triedNodes: {},
+      decidedNodes: {}
+    }
+    
+    setTabs([...tabs, newTab])
+    setActiveTabId(newTab.id)
+  }
 
-    const selectedOptionId = selectedOptions[nodeId]
+  // タブを削除
+  const deleteTab = (tabId: string) => {
+    if (tabs.length === 1) return // 最後の1つは削除不可
+    
+    const newTabs = tabs.filter(tab => tab.id !== tabId)
+    
+    // タブ名を番号順に振り直す
+    const renumberedTabs = newTabs.map((tab, index) => ({
+      ...tab,
+      name: `Set ${index + 1}`
+    }))
+    
+    setTabs(renumberedTabs)
+    
+    // アクティブなタブを削除した場合、最初のタブに切り替え
+    if (activeTabId === tabId) {
+      setActiveTabId(renumberedTabs[0].id)
+    }
+  }
+
+  const handleDecision = (nodeId: string, currentLevel: number) => {
+    if (!tree || !activeTab) return
+
+    const selectedOptionId = activeTab.selectedOptions[nodeId]
     if (!selectedOptionId) return
 
     const currentNode = tree.nodes[nodeId]
@@ -53,7 +128,7 @@ function App() {
     
     if (selectedOption?.next_node_ids) {
       // このノードより下の階層を削除
-      const filteredHierarchy = nodeHierarchy.filter(n => n.level <= currentLevel)
+      const filteredHierarchy = activeTab.nodeHierarchy.filter(n => n.level <= currentLevel)
       
       // 複数の次ノードを追加
       const newNodes: NodeWithLevel[] = []
@@ -68,23 +143,30 @@ function App() {
         }
       })
       
-      setNodeHierarchy([...filteredHierarchy, ...newNodes])
-      
-      // 決定済みノードとして記録（タイムスタンプを保存）
-      setDecidedNodes({ ...decidedNodes, [nodeId]: Date.now() })
+      updateActiveTab({
+        nodeHierarchy: [...filteredHierarchy, ...newNodes],
+        decidedNodes: { ...activeTab.decidedNodes, [nodeId]: Date.now() }
+      })
     }
   }
 
   const toggleHint = (nodeId: string) => {
-    setShowHints({ ...showHints, [nodeId]: !showHints[nodeId] })
+    if (!activeTab) return
+    updateActiveTab({
+      showHints: { ...activeTab.showHints, [nodeId]: !activeTab.showHints[nodeId] }
+    })
   }
 
   const toggleTried = (nodeId: string) => {
-    setTriedNodes({ ...triedNodes, [nodeId]: !triedNodes[nodeId] })
+    if (!activeTab) return
+    updateActiveTab({
+      triedNodes: { ...activeTab.triedNodes, [nodeId]: !activeTab.triedNodes[nodeId] }
+    })
   }
 
   // 選択されたパスを取得（rootからleafまで）
   const getSelectedPath = (): NodeWithLevel[] => {
+    if (!activeTab) return []
     const path: NodeWithLevel[] = []
     const levelGroups = getNodesByLevel()
     
@@ -95,7 +177,7 @@ function App() {
       
       // このレベルで決定済み、かつ失敗マークがついていないノードを探す
       const validNodes = nodesAtLevel.filter(n => 
-        decidedNodes[n.node.id] && !triedNodes[n.node.id]
+        activeTab.decidedNodes[n.node.id] && !activeTab.triedNodes[n.node.id]
       )
       
       if (validNodes.length === 0) {
@@ -105,7 +187,7 @@ function App() {
       
       // 最後に決定したノードを選択（タイムスタンプが最大のもの）
       const selectedNode = validNodes.reduce((latest, current) => {
-        return decidedNodes[current.node.id] > decidedNodes[latest.node.id] ? current : latest
+        return activeTab.decidedNodes[current.node.id] > activeTab.decidedNodes[latest.node.id] ? current : latest
       })
       
       path.push(selectedNode)
@@ -116,8 +198,9 @@ function App() {
 
   // レベルごとにノードをグループ化
   const getNodesByLevel = () => {
+    if (!activeTab) return {}
     const levels: Record<number, NodeWithLevel[]> = {}
-    nodeHierarchy.forEach(nodeWithLevel => {
+    activeTab.nodeHierarchy.forEach(nodeWithLevel => {
       if (!levels[nodeWithLevel.level]) {
         levels[nodeWithLevel.level] = []
       }
@@ -128,7 +211,7 @@ function App() {
 
   if (loading) return <div style={{ padding: '20px' }}>読み込み中...</div>
   if (error) return <div style={{ padding: '20px', color: 'red' }}>エラー: {error}</div>
-  if (!tree || nodeHierarchy.length === 0) return <div style={{ padding: '20px' }}>データがありません</div>
+  if (!tree || !activeTab) return <div style={{ padding: '20px' }}>データがありません</div>
 
   const nodesByLevel = getNodesByLevel()
   const maxLevel = Math.max(...Object.keys(nodesByLevel).map(Number))
@@ -136,6 +219,81 @@ function App() {
   return (
     <div style={{ padding: '40px', fontFamily: 'sans-serif', minHeight: '100vh' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* タブバー */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '5px', 
+          marginBottom: '20px',
+          borderBottom: '2px solid #ddd',
+          paddingBottom: '0'
+        }}>
+          {tabs.map(tab => (
+            <div
+              key={tab.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 20px',
+                backgroundColor: activeTabId === tab.id ? '#007bff' : '#f0f0f0',
+                color: activeTabId === tab.id ? 'white' : '#333',
+                borderRadius: '8px 8px 0 0',
+                cursor: 'pointer',
+                fontWeight: activeTabId === tab.id ? 'bold' : 'normal',
+                transition: 'all 0.2s'
+              }}
+              onClick={() => setActiveTabId(tab.id)}
+            >
+              <span>{tab.name}</span>
+              {tabs.length > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    deleteTab(tab.id)
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: activeTabId === tab.id ? 'white' : '#999',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    padding: '0 4px'
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          
+          {/* 新しいタブボタン */}
+          {tabs.length < 10 && (
+            <button
+              onClick={addNewTab}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: 'white',
+                border: '2px dashed #ccc',
+                borderRadius: '8px 8px 0 0',
+                cursor: 'pointer',
+                color: '#666',
+                fontWeight: 'bold',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#007bff'
+                e.currentTarget.style.color = '#007bff'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#ccc'
+                e.currentTarget.style.color = '#666'
+              }}
+            >
+              + 新しいタブ
+            </button>
+          )}
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
             <h1>{tree.title}</h1>
@@ -194,7 +352,7 @@ function App() {
                 }}>
                   {nodesByLevel[level].map((nodeWithLevel) => {
                     const node = nodeWithLevel.node
-                    const isTried = triedNodes[node.id]
+                    const isTried = activeTab.triedNodes[node.id]
                     return (
                       <div 
                         key={node.id}
@@ -251,17 +409,17 @@ function App() {
                                 fontWeight: 'bold',
                                 borderRadius: '4px',
                                 border: '2px solid #ffc107',
-                                backgroundColor: showHints[node.id] ? '#ffc107' : 'white',
-                                color: showHints[node.id] ? 'white' : '#ffc107',
+                                backgroundColor: activeTab.showHints[node.id] ? '#ffc107' : 'white',
+                                color: activeTab.showHints[node.id] ? 'white' : '#ffc107',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
                                 marginBottom: '8px'
                               }}
                             >
-                              💡 {showHints[node.id] ? 'ヒントを隠す' : 'ヒントを表示'}
+                              💡 {activeTab.showHints[node.id] ? 'ヒントを隠す' : 'ヒントを表示'}
                             </button>
                             
-                            {showHints[node.id] && (
+                            {activeTab.showHints[node.id] && (
                               <div style={{ 
                                 backgroundColor: node.hint_type === 'command' ? '#1e1e1e' : '#fff3cd',
                                 color: node.hint_type === 'command' ? '#00ff00' : '#856404',
@@ -281,8 +439,10 @@ function App() {
 
                         <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <select 
-                            value={selectedOptions[node.id] || ''}
-                            onChange={(e) => setSelectedOptions({ ...selectedOptions, [node.id]: e.target.value })}
+                            value={activeTab.selectedOptions[node.id] || ''}
+                            onChange={(e) => updateActiveTab({
+                              selectedOptions: { ...activeTab.selectedOptions, [node.id]: e.target.value }
+                            })}
                             style={{ 
                               padding: '8px', 
                               fontSize: '14px',
@@ -301,16 +461,16 @@ function App() {
                           
                           <button
                             onClick={() => handleDecision(node.id, nodeWithLevel.level)}
-                            disabled={!selectedOptions[node.id]}
+                            disabled={!activeTab.selectedOptions[node.id]}
                             style={{
                               padding: '8px 20px',
                               fontSize: '14px',
                               fontWeight: 'bold',
                               borderRadius: '4px',
                               border: 'none',
-                              backgroundColor: selectedOptions[node.id] ? '#007bff' : '#ccc',
+                              backgroundColor: activeTab.selectedOptions[node.id] ? '#007bff' : '#ccc',
                               color: 'white',
-                              cursor: selectedOptions[node.id] ? 'pointer' : 'not-allowed',
+                              cursor: activeTab.selectedOptions[node.id] ? 'pointer' : 'not-allowed',
                               transition: 'background-color 0.2s'
                             }}
                           >
@@ -390,7 +550,7 @@ function App() {
                 {getSelectedPath().map((nodeWithLevel, index) => {
                   const node = nodeWithLevel.node
                   const selectedOption = node.options.find(
-                    opt => opt.id === selectedOptions[node.id]
+                    opt => opt.id === activeTab.selectedOptions[node.id]
                   )
                   
                   return (
