@@ -49,11 +49,14 @@ function App() {
     const selectedOption = currentNode.options.find(opt => opt.id === selectedOptionId)
     
     if (selectedOption?.next_node_ids) {
+      // このノードより下の階層を削除
+      const filteredHierarchy = nodeHierarchy.filter(n => n.level <= currentLevel)
+      
       // 複数の次ノードを追加
       const newNodes: NodeWithLevel[] = []
       selectedOption.next_node_ids.forEach(nextNodeId => {
         const nextNode = tree.nodes[nextNodeId]
-        if (nextNode && !nodeHierarchy.find(n => n.node.id === nextNode.id)) {
+        if (nextNode) {
           newNodes.push({
             node: nextNode,
             level: currentLevel + 1,
@@ -61,9 +64,8 @@ function App() {
           })
         }
       })
-      if (newNodes.length > 0) {
-        setNodeHierarchy([...nodeHierarchy, ...newNodes])
-      }
+      
+      setNodeHierarchy([...filteredHierarchy, ...newNodes])
     }
   }
 
