@@ -12,15 +12,77 @@
       "options": [
         {
           "id": "port-22",
-          "label": "22"
+          "label": "22",
+          "next_node_id": "ssh-22"
         },
         {
           "id": "port-80",
-          "label": "80"
+          "label": "80",
+          "next_node_id": "http-80"
         },
         {
           "id": "port-443",
-          "label": "443"
+          "label": "443",
+          "next_node_id": "https-443"
+        }
+      ]
+    },
+    "ssh-22": {
+      "id": "ssh-22",
+      "question": "SSH (ポート22) に対して次に試すことは？",
+      "type": "select",
+      "options": [
+        {
+          "id": "ssh-brute",
+          "label": "Hydraでブルートフォース"
+        },
+        {
+          "id": "ssh-enum",
+          "label": "バージョン情報から脆弱性を検索"
+        },
+        {
+          "id": "ssh-key",
+          "label": "公開鍵認証を試す"
+        }
+      ]
+    },
+    "http-80": {
+      "id": "http-80",
+      "question": "HTTP (ポート80) に対して次に試すことは？",
+      "command": "curl http://<IP>",
+      "type": "select",
+      "options": [
+        {
+          "id": "http-gobuster",
+          "label": "Gobusterでディレクトリ列挙"
+        },
+        {
+          "id": "http-nikto",
+          "label": "Niktoで脆弱性スキャン"
+        },
+        {
+          "id": "http-manual",
+          "label": "手動でブラウジング"
+        }
+      ]
+    },
+    "https-443": {
+      "id": "https-443",
+      "question": "HTTPS (ポート443) に対して次に試すことは？",
+      "command": "curl -k https://<IP>",
+      "type": "select",
+      "options": [
+        {
+          "id": "https-cert",
+          "label": "SSL証明書を確認"
+        },
+        {
+          "id": "https-gobuster",
+          "label": "Gobusterでディレクトリ列挙"
+        },
+        {
+          "id": "https-manual",
+          "label": "手動でブラウジング"
         }
       ]
     }
