@@ -1,0 +1,28 @@
+{
+  "id": "nmap-basics",
+  "title": "Nmap基礎スキャン",
+  "description": "ポートスキャンから攻略までの手順",
+  "root_node_id": "nmap-scan",
+  "nodes": {
+    "nmap-scan": {
+      "id": "nmap-scan",
+      "question": "Nmapスキャン結果は？",
+      "command": "sudo nmap -sS <IP> -p- --min-rate 5000 -T4 -Pn",
+      "type": "select",
+      "options": [
+        {
+          "id": "port-22",
+          "label": "22"
+        },
+        {
+          "id": "port-80",
+          "label": "80"
+        },
+        {
+          "id": "port-443",
+          "label": "443"
+        }
+      ]
+    }
+  }
+}
