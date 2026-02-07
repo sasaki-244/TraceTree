@@ -148,6 +148,34 @@ function App() {
     ))
   }
 
+  // 現在のOSのデータを初期化
+  const clearCurrentOs = () => {
+    const confirmed = window.confirm(
+      `${osMode === 'windows' ? 'Windows' : 'Linux'}側のデータを初期化しますか？\nすべてのタブと選択内容がリセットされます。`
+    )
+    
+    if (!confirmed) return
+    
+    // Set 1だけ残して初期化
+    const initialTabId = `tab-${Date.now()}`
+    const resetTabs: TabData[] = [{
+      id: initialTabId,
+      name: 'Set 1',
+      nodeHierarchy: tree ? [{
+        node: tree.nodes[tree.root_node_id],
+        level: 0,
+        parentId: null
+      }] : [],
+      selectedOptions: {},
+      showHints: {},
+      triedNodes: {},
+      decidedNodes: {}
+    }]
+    
+    setTabs(resetTabs)
+    setActiveTabId(initialTabId)
+  }
+
   useEffect(() => {
     // APIからツリーデータを取得
     fetch('http://localhost:8000/api/trees/nmap-basics')
@@ -454,35 +482,66 @@ function App() {
             <p style={{ color: '#666', marginBottom: '40px' }}>{tree.description}</p>
           </div>
           
-          {/* Flag獲得ボタン */}
-          <button
-            onClick={() => setShowPathModal(true)}
-            style={{
-              padding: '12px 30px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: '#28a745',
-              color: 'white',
-              cursor: 'pointer',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#218838'
-              e.currentTarget.style.transform = 'translateY(-2px)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#28a745'
-              e.currentTarget.style.transform = 'translateY(0)'
-            }}
-          >
-            🚩 Flag獲得
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {/* Clearボタン */}
+            <button
+              onClick={clearCurrentOs}
+              style={{
+                padding: '12px 30px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                borderRadius: '8px',
+                border: '2px solid #dc3545',
+                backgroundColor: 'white',
+                color: '#dc3545',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#dc3545'
+                e.currentTarget.style.color = 'white'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white'
+                e.currentTarget.style.color = '#dc3545'
+              }}
+            >
+              🗑️ Clear
+            </button>
+
+            {/* Flag獲得ボタン */}
+            <button
+              onClick={() => setShowPathModal(true)}
+              style={{
+                padding: '12px 30px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: '#28a745',
+                color: 'white',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#218838'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#28a745'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+            >
+              🚩 Flag獲得
+            </button>
+          </div>
         </div>
 
         {/* レベルごとに表示 */}
