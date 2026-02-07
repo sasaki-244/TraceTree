@@ -21,9 +21,23 @@ interface TabData {
 
 function App() {
   const [tree, setTree] = useState<Tree | null>(null)
-  const initialTabId = `tab-${Date.now()}`
-  const [tabs, setTabs] = useState<TabData[]>([
-    {
+  
+  // LocalStorageから初期データを読み込む、なければデフォルト値
+  const getInitialTabs = (): TabData[] => {
+    const savedData = localStorage.getItem('tracetree-tabs')
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData)
+        if (parsed.tabs && parsed.tabs.length > 0) {
+          return parsed.tabs
+        }
+      } catch (e) {
+        console.error('Failed to load saved tabs:', e)
+      }
+    }
+    // LocalStorageにデータがない場合はデフォルトのタブを作成
+    const initialTabId = `tab-${Date.now()}`
+    return [{
       id: initialTabId,
       name: 'Set 1',
       nodeHierarchy: [],
@@ -31,12 +45,43 @@ function App() {
       showHints: {},
       triedNodes: {},
       decidedNodes: {}
+    }]
+  }
+
+  const getInitialActiveTabId = (): string => {
+    const savedData = localStorage.getItem('tracetree-tabs')
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData)
+        if (parsed.activeTabId) {
+          return parsed.activeTabId
+        }
+      } catch (e) {
+        console.error('Failed to load saved activeTabId:', e)
+      }
     }
-  ])
-  const [activeTabId, setActiveTabId] = useState(initialTabId)
+    return getInitialTabs()[0].id
+  }
+
+  const [tabs, setTabs] = useState<TabData[]>(getInitialTabs)
+  const [activeTabId, setActiveTabId] = useState<string>(getInitialActiveTabId)
   const [showPathModal, setShowPathModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // LocalStorageのキー
+  const STORAGE_KEY = 'tracetree-tabs'
+
+  // タブデータが変更されたらLocalStorageに保存
+  useEffect(() => {
+    if (tabs.length > 0) {
+      const dataToSave = {
+        tabs,
+        activeTabId
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave))
+    }
+  }, [tabs, activeTabId])
 
   // アクティブなタブのデータを取得
   const activeTab = tabs.find(tab => tab.id === activeTabId)
@@ -57,15 +102,22 @@ function App() {
       })
       .then((data: Tree) => {
         setTree(data)
-        // 最初のノードを追加（Set 1に）
-        const rootNode = data.nodes[data.root_node_id]
-        updateActiveTab({
-          nodeHierarchy: [{
-            node: rootNode,
-            level: 0,
-            parentId: null
-          }]
-        })
+        
+        // LocalStorageから復元されたタブにnodeHierarchyがない場合のみ、rootノードを設定
+        setTabs(prevTabs => prevTabs.map(tab => {
+          if (tab.nodeHierarchy.length === 0) {
+            return {
+              ...tab,
+              nodeHierarchy: [{
+                node: data.nodes[data.root_node_id],
+                level: 0,
+                parentId: null
+              }]
+            }
+          }
+          return tab
+        }))
+        
         setLoading(false)
       })
       .catch(err => {
@@ -461,16 +513,16 @@ function App() {
                           
                           <button
                             onClick={() => handleDecision(node.id, nodeWithLevel.level)}
-                            disabled={!activeTab.selectedOptions[node.id]}
+                            disabled={!activeTab.selectedOptions[node.id] || isTried}
                             style={{
                               padding: '8px 20px',
                               fontSize: '14px',
                               fontWeight: 'bold',
                               borderRadius: '4px',
                               border: 'none',
-                              backgroundColor: activeTab.selectedOptions[node.id] ? '#007bff' : '#ccc',
+                              backgroundColor: (activeTab.selectedOptions[node.id] && !isTried) ? '#007bff' : '#ccc',
                               color: 'white',
-                              cursor: activeTab.selectedOptions[node.id] ? 'pointer' : 'not-allowed',
+                              cursor: (activeTab.selectedOptions[node.id] && !isTried) ? 'pointer' : 'not-allowed',
                               transition: 'background-color 0.2s'
                             }}
                           >
