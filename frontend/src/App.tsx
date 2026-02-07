@@ -352,60 +352,161 @@ function App() {
   const maxLevel = Math.max(...Object.keys(nodesByLevel).map(Number))
 
   return (
-    <div style={{ padding: '40px', fontFamily: 'sans-serif', minHeight: '100vh' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        {/* OS切り替えトグル */}
+    <div style={{ fontFamily: 'sans-serif', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+      {/* ダークヘッダー */}
+      <header style={{
+        backgroundColor: '#1a1a1a',
+        borderBottom: '3px solid #00ff00',
+        padding: '20px 40px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+      }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* 左側: ロゴとタイトル */}
+          <div>
+            <h1 style={{ 
+              margin: 0, 
+              fontSize: '28px', 
+              fontWeight: 'bold',
+              color: '#00ff00',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '5px'
+            }}>
+              🌲 CTF Attack Path Mapper
+            </h1>
+            <p style={{ 
+              margin: 0, 
+              fontSize: '13px', 
+              color: '#999',
+              fontFamily: 'monospace'
+            }}>
+              HTB & CTF Machine Exploitation Visualizer
+            </p>
+          </div>
+
+          {/* 右側: ボタン群 */}
+          <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+            {/* OS切り替えトグル */}
+            <div style={{
+              display: 'inline-flex',
+              backgroundColor: '#2a2a2a',
+              borderRadius: '8px',
+              padding: '4px',
+              border: '1px solid #444'
+            }}>
+              <button
+                onClick={() => setOsMode('windows')}
+                style={{
+                  padding: '8px 20px',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '6px',
+                  backgroundColor: osMode === 'windows' ? '#00ff00' : 'transparent',
+                  color: osMode === 'windows' ? '#000' : '#999',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Windows
+              </button>
+              <button
+                onClick={() => setOsMode('linux')}
+                style={{
+                  padding: '8px 20px',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '6px',
+                  backgroundColor: osMode === 'linux' ? '#00ff00' : 'transparent',
+                  color: osMode === 'linux' ? '#000' : '#999',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Linux
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* メインコンテンツ */}
+      <div style={{ padding: '40px' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        
+        {/* Clearボタン & Flag獲得ボタン */}
         <div style={{ 
           display: 'flex', 
-          justifyContent: 'center',
-          marginBottom: '20px'
+          gap: '15px', 
+          marginBottom: '20px',
+          justifyContent: 'flex-end'
         }}>
-          <div style={{
-            display: 'inline-flex',
-            backgroundColor: '#f0f0f0',
-            borderRadius: '8px',
-            padding: '4px'
-          }}>
-            <button
-              onClick={() => setOsMode('windows')}
-              style={{
-                padding: '8px 24px',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                border: 'none',
-                borderRadius: '6px',
-                backgroundColor: osMode === 'windows' ? '#007bff' : 'transparent',
-                color: osMode === 'windows' ? 'white' : '#666',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              Windows
-            </button>
-            <button
-              onClick={() => setOsMode('linux')}
-              style={{
-                padding: '8px 24px',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                border: 'none',
-                borderRadius: '6px',
-                backgroundColor: osMode === 'linux' ? '#007bff' : 'transparent',
-                color: osMode === 'linux' ? 'white' : '#666',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              Linux
-            </button>
-          </div>
+          {/* Clearボタン */}
+          <button
+            onClick={clearCurrentOs}
+            style={{
+              padding: '10px 24px',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              borderRadius: '6px',
+              border: '2px solid #dc3545',
+              backgroundColor: 'white',
+              color: '#dc3545',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#dc3545'
+              e.currentTarget.style.color = 'white'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'white'
+              e.currentTarget.style.color = '#dc3545'
+            }}
+          >
+            🗑️ Clear
+          </button>
+
+          {/* Flag獲得ボタン */}
+          <button
+            onClick={() => setShowPathModal(true)}
+            style={{
+              padding: '10px 24px',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              borderRadius: '6px',
+              border: '2px solid #28a745',
+              backgroundColor: 'white',
+              color: '#28a745',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#28a745'
+              e.currentTarget.style.color = 'white'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'white'
+              e.currentTarget.style.color = '#28a745'
+            }}
+          >
+            🚩 Flag獲得
+          </button>
         </div>
 
         {/* タブバー */}
         <div style={{ 
           display: 'flex', 
           gap: '5px', 
-          marginBottom: '20px',
+          marginBottom: '30px',
           borderBottom: '2px solid #ddd',
           paddingBottom: '0'
         }}>
@@ -476,75 +577,7 @@ function App() {
           )}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div>
-            <h1>{tree.title}</h1>
-            <p style={{ color: '#666', marginBottom: '40px' }}>{tree.description}</p>
-          </div>
-          
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {/* Clearボタン */}
-            <button
-              onClick={clearCurrentOs}
-              style={{
-                padding: '12px 30px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                borderRadius: '8px',
-                border: '2px solid #dc3545',
-                backgroundColor: 'white',
-                color: '#dc3545',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#dc3545'
-                e.currentTarget.style.color = 'white'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'white'
-                e.currentTarget.style.color = '#dc3545'
-              }}
-            >
-              🗑️ Clear
-            </button>
-
-            {/* Flag獲得ボタン */}
-            <button
-              onClick={() => setShowPathModal(true)}
-              style={{
-                padding: '12px 30px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: '#28a745',
-                color: 'white',
-                cursor: 'pointer',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#218838'
-                e.currentTarget.style.transform = 'translateY(-2px)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#28a745'
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}
-            >
-              🚩 Flag獲得
-            </button>
-          </div>
-        </div>
-
-        {/* レベルごとに表示 */}
+        {/* ツリーコンテンツ */}
         {Array.from({ length: maxLevel + 1 }, (_, level) => (
           <div key={level} style={{ marginBottom: '40px' }}>
             {nodesByLevel[level] && (
@@ -699,9 +732,10 @@ function App() {
           </div>
         ))}
       </div>
+    </div>
 
-      {/* モーダル */}
-      {showPathModal && (
+    {/* モーダル */}
+    {showPathModal && (
         <div
           style={{
             position: 'fixed',
