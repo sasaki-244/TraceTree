@@ -23,8 +23,8 @@ function App() {
   const [tree, setTree] = useState<Tree | null>(null)
   
   // LocalStorageから初期データを読み込む、なければデフォルト値
-  const getInitialTabs = (): TabData[] => {
-    const savedData = localStorage.getItem('tracetree-tabs')
+  const getInitialTabs = (os: 'windows' | 'linux'): TabData[] => {
+    const savedData = localStorage.getItem(`tracetree-tabs-${os}`)
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData)
@@ -48,8 +48,8 @@ function App() {
     }]
   }
 
-  const getInitialActiveTabId = (): string => {
-    const savedData = localStorage.getItem('tracetree-tabs')
+  const getInitialActiveTabId = (os: 'windows' | 'linux'): string => {
+    const savedData = localStorage.getItem(`tracetree-tabs-${os}`)
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData)
@@ -60,28 +60,83 @@ function App() {
         console.error('Failed to load saved activeTabId:', e)
       }
     }
-    return getInitialTabs()[0].id
+    return getInitialTabs(os)[0].id
   }
 
-  const [tabs, setTabs] = useState<TabData[]>(getInitialTabs)
-  const [activeTabId, setActiveTabId] = useState<string>(getInitialActiveTabId)
+  // 初期OSモードをLocalStorageから読み込む
+  const getInitialOsMode = (): 'windows' | 'linux' => {
+    const savedMode = localStorage.getItem('tracetree-os-mode')
+    if (savedMode === 'linux') return 'linux'
+    return 'windows'
+  }
+
+  const initialOsMode = getInitialOsMode()
+  
+  const [osMode, setOsMode] = useState<'windows' | 'linux'>(initialOsMode)
+  const [tabs, setTabs] = useState<TabData[]>(() => getInitialTabs(initialOsMode))
+  const [activeTabId, setActiveTabId] = useState<string>(() => getInitialActiveTabId(initialOsMode))
   const [showPathModal, setShowPathModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // 初期化後にosModeをセット
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [isSwitchingOs, setIsSwitchingOs] = useState(false) // OS切り替え中フラグ
+  
+  useEffect(() => {
+    setIsInitialized(true)
+  }, [])
+
   // LocalStorageのキー
-  const STORAGE_KEY = 'tracetree-tabs'
+  const STORAGE_KEY = `tracetree-tabs-${osMode}`
 
   // タブデータが変更されたらLocalStorageに保存
   useEffect(() => {
-    if (tabs.length > 0) {
+    if (tabs.length > 0 && !loading && !isSwitchingOs) {
       const dataToSave = {
         tabs,
         activeTabId
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave))
     }
-  }, [tabs, activeTabId])
+  }, [tabs, activeTabId, loading, isSwitchingOs])  // STORAGE_KEYを依存から削除
+
+  // OSモードが変更されたらLocalStorageに保存し、タブをリロード
+  useEffect(() => {
+    // 初回マウント時はスキップ
+    if (!isInitialized) return
+    
+    setIsSwitchingOs(true)
+    localStorage.setItem('tracetree-os-mode', osMode)
+    
+    setTimeout(() => {
+      const newTabs = getInitialTabs(osMode)
+      const newActiveTabId = getInitialActiveTabId(osMode)
+      
+      if (tree) {
+        const initializedTabs = newTabs.map(tab => {
+          if (tab.nodeHierarchy.length === 0) {
+            return {
+              ...tab,
+              nodeHierarchy: [{
+                node: tree.nodes[tree.root_node_id],
+                level: 0,
+                parentId: null
+              }]
+            }
+          }
+          return tab
+        })
+        setTabs(initializedTabs)
+      } else {
+        setTabs(newTabs)
+      }
+      
+      setActiveTabId(newActiveTabId)
+      
+      setTimeout(() => setIsSwitchingOs(false), 100)
+    }, 50)
+  }, [osMode, isInitialized])
 
   // アクティブなタブのデータを取得
   const activeTab = tabs.find(tab => tab.id === activeTabId)
@@ -271,6 +326,53 @@ function App() {
   return (
     <div style={{ padding: '40px', fontFamily: 'sans-serif', minHeight: '100vh' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* OS切り替えトグル */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center',
+          marginBottom: '20px'
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '8px',
+            padding: '4px'
+          }}>
+            <button
+              onClick={() => setOsMode('windows')}
+              style={{
+                padding: '8px 24px',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                border: 'none',
+                borderRadius: '6px',
+                backgroundColor: osMode === 'windows' ? '#007bff' : 'transparent',
+                color: osMode === 'windows' ? 'white' : '#666',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Windows
+            </button>
+            <button
+              onClick={() => setOsMode('linux')}
+              style={{
+                padding: '8px 24px',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                border: 'none',
+                borderRadius: '6px',
+                backgroundColor: osMode === 'linux' ? '#007bff' : 'transparent',
+                color: osMode === 'linux' ? 'white' : '#666',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Linux
+            </button>
+          </div>
+        </div>
+
         {/* タブバー */}
         <div style={{ 
           display: 'flex', 
