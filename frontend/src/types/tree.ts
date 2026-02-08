@@ -6,11 +6,17 @@ export interface Option {
   next_node_ids?: string[];  // 複数の次ノードID
 }
 
+export interface Hint {
+  text: string;
+  type: 'command' | 'text';
+}
+
 export interface Node {
   id: string;
   question: string;
-  hint?: string;
-  hint_type?: 'command' | 'text';
+  hint?: string;  // 後方互換性のため残す
+  hint_type?: 'command' | 'text';  // 後方互換性のため残す
+  hints?: Hint[];  // 新しいヒント形式
   type: string;  // 'select', 'multiselect', 'text'
   options: Option[];
   description?: string;

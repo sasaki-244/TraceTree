@@ -20,7 +20,14 @@ interface TabData {
 }
 
 function App() {
-  const [tree, setTree] = useState<Tree | null>(null)
+  // 両方のOSのツリーデータを保持
+  const [trees, setTrees] = useState<{
+    linux: Tree | null,
+    windows: Tree | null
+  }>({ linux: null, windows: null })
+  
+  // 現在表示中のツリー
+  const [currentTree, setCurrentTree] = useState<Tree | null>(null)
   
   // LocalStorageから初期データを読み込む、なければデフォルト値
   const getInitialTabs = (os: 'windows' | 'linux'): TabData[] => {
@@ -101,42 +108,42 @@ function App() {
     }
   }, [tabs, activeTabId, loading, isSwitchingOs])  // STORAGE_KEYを依存から削除
 
-  // OSモードが変更されたらLocalStorageに保存し、タブをリロード
+  // OSモードが変更されたら、メモリ内のツリーデータを切り替える
   useEffect(() => {
-    // 初回マウント時はスキップ
-    if (!isInitialized) return
+    // 初回マウント時またはツリーデータ未取得時はスキップ
+    if (!isInitialized || !trees.linux || !trees.windows) return
     
     setIsSwitchingOs(true)
     localStorage.setItem('tracetree-os-mode', osMode)
     
-    setTimeout(() => {
-      const newTabs = getInitialTabs(osMode)
-      const newActiveTabId = getInitialActiveTabId(osMode)
-      
-      if (tree) {
-        const initializedTabs = newTabs.map(tab => {
-          if (tab.nodeHierarchy.length === 0) {
-            return {
-              ...tab,
-              nodeHierarchy: [{
-                node: tree.nodes[tree.root_node_id],
-                level: 0,
-                parentId: null
-              }]
-            }
-          }
-          return tab
-        })
-        setTabs(initializedTabs)
-      } else {
-        setTabs(newTabs)
+    // メモリ内のツリーデータを切り替え
+    const newTree = osMode === 'linux' ? trees.linux : trees.windows
+    setCurrentTree(newTree)
+    
+    // LocalStorageから該当OSのタブデータを読み込む
+    const newTabs = getInitialTabs(osMode)
+    const newActiveTabId = getInitialActiveTabId(osMode)
+    
+    // タブデータを復元
+    setTabs(newTabs.map(tab => {
+      // nodeHierarchyが空の場合のみrootノードを設定
+      if (tab.nodeHierarchy.length === 0) {
+        return {
+          ...tab,
+          nodeHierarchy: [{
+            node: newTree.nodes[newTree.root_node_id],
+            level: 0,
+            parentId: null
+          }]
+        }
       }
-      
-      setActiveTabId(newActiveTabId)
-      
-      setTimeout(() => setIsSwitchingOs(false), 100)
-    }, 50)
-  }, [osMode, isInitialized])
+      return tab // 既存のタブデータを保持
+    }))
+    
+    setActiveTabId(newActiveTabId)
+    
+    setTimeout(() => setIsSwitchingOs(false), 100)
+  }, [osMode, isInitialized, trees])
 
   // アクティブなタブのデータを取得
   const activeTab = tabs.find(tab => tab.id === activeTabId)
@@ -161,8 +168,8 @@ function App() {
     const resetTabs: TabData[] = [{
       id: initialTabId,
       name: 'Set 1',
-      nodeHierarchy: tree ? [{
-        node: tree.nodes[tree.root_node_id],
+      nodeHierarchy: currentTree ? [{
+        node: currentTree.nodes[currentTree.root_node_id],
         level: 0,
         parentId: null
       }] : [],
@@ -176,23 +183,33 @@ function App() {
     setActiveTabId(initialTabId)
   }
 
+  // 初回マウント時に両方のツリーデータを取得
   useEffect(() => {
-    // APIからツリーデータを取得
-    fetch('http://localhost:8000/api/trees/nmap-basics')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch tree')
+    setLoading(true)
+    Promise.all([
+      fetch('http://localhost:8000/api/trees/nmap-basics-linux').then(res => {
+        if (!res.ok) throw new Error('Failed to fetch linux tree')
+        return res.json()
+      }),
+      fetch('http://localhost:8000/api/trees/nmap-basics-windows').then(res => {
+        if (!res.ok) throw new Error('Failed to fetch windows tree')
         return res.json()
       })
-      .then((data: Tree) => {
-        setTree(data)
+    ])
+      .then(([linuxData, windowsData]) => {
+        setTrees({ linux: linuxData, windows: windowsData })
         
-        // LocalStorageから復元されたタブにnodeHierarchyがない場合のみ、rootノードを設定
+        // 初期OSモードに応じたツリーを設定
+        const initialTree = initialOsMode === 'linux' ? linuxData : windowsData
+        setCurrentTree(initialTree)
+        
+        // nodeHierarchyが空のタブのみrootノードを設定
         setTabs(prevTabs => prevTabs.map(tab => {
           if (tab.nodeHierarchy.length === 0) {
             return {
               ...tab,
               nodeHierarchy: [{
-                node: data.nodes[data.root_node_id],
+                node: initialTree.nodes[initialTree.root_node_id],
                 level: 0,
                 parentId: null
               }]
@@ -207,7 +224,7 @@ function App() {
         setError(err.message)
         setLoading(false)
       })
-  }, [])
+  }, []) // 空の依存配列 = 初回のみ実行
 
   // 新しいタブを追加
   const addNewTab = () => {
@@ -217,8 +234,8 @@ function App() {
     const newTab: TabData = {
       id: `tab-${Date.now()}`, // タイムスタンプでユニークなIDを生成
       name: `Set ${newTabNumber}`,
-      nodeHierarchy: tree ? [{
-        node: tree.nodes[tree.root_node_id],
+      nodeHierarchy: currentTree ? [{
+        node: currentTree.nodes[currentTree.root_node_id],
         level: 0,
         parentId: null
       }] : [],
@@ -253,22 +270,33 @@ function App() {
   }
 
   const handleDecision = (nodeId: string, currentLevel: number) => {
-    if (!tree || !activeTab) return
+    if (!currentTree || !activeTab) return
 
     const selectedOptionId = activeTab.selectedOptions[nodeId]
     if (!selectedOptionId) return
 
-    const currentNode = tree.nodes[nodeId]
+    const currentNode = currentTree.nodes[nodeId]
     const selectedOption = currentNode.options.find(opt => opt.id === selectedOptionId)
     
     if (selectedOption?.next_node_ids) {
+      // 「flag獲得！」が選択された場合、自動的にモーダルを表示
+      if (selectedOption.label === 'flag獲得！') {
+        // decidedNodesを更新してからモーダルを表示
+        updateActiveTab({
+          decidedNodes: { ...activeTab.decidedNodes, [nodeId]: Date.now() }
+        })
+        // 少し遅延させてステート更新を確実にする
+        setTimeout(() => setShowPathModal(true), 100)
+        return
+      }
+      
       // このノードより下の階層を削除
       const filteredHierarchy = activeTab.nodeHierarchy.filter(n => n.level <= currentLevel)
       
       // 複数の次ノードを追加
       const newNodes: NodeWithLevel[] = []
       selectedOption.next_node_ids.forEach(nextNodeId => {
-        const nextNode = tree.nodes[nextNodeId]
+        const nextNode = currentTree.nodes[nextNodeId]
         if (nextNode) {
           newNodes.push({
             node: nextNode,
@@ -346,7 +374,7 @@ function App() {
 
   if (loading) return <div style={{ padding: '20px' }}>読み込み中...</div>
   if (error) return <div style={{ padding: '20px', color: 'red' }}>エラー: {error}</div>
-  if (!tree || !activeTab) return <div style={{ padding: '20px' }}>データがありません</div>
+  if (!currentTree || !activeTab) return <div style={{ padding: '20px' }}>データがありません</div>
 
   const nodesByLevel = getNodesByLevel()
   const maxLevel = Math.max(...Object.keys(nodesByLevel).map(Number))
@@ -645,7 +673,7 @@ function App() {
                           {node.question}
                         </h3>
                         
-                        {node.hint && (
+                        {(node.hint || node.hints) && (
                           <div style={{ marginBottom: '15px' }}>
                             <button
                               onClick={() => toggleHint(node.id)}
@@ -666,18 +694,59 @@ function App() {
                             </button>
                             
                             {activeTab.showHints[node.id] && (
-                              <div style={{ 
-                                backgroundColor: node.hint_type === 'command' ? '#1e1e1e' : '#fff3cd',
-                                color: node.hint_type === 'command' ? '#00ff00' : '#856404',
-                                padding: '12px', 
-                                borderRadius: '4px',
-                                fontFamily: node.hint_type === 'command' ? 'monospace' : 'inherit',
-                                fontSize: '12px',
-                                border: node.hint_type === 'text' ? '1px solid #ffc107' : 'none',
-                                lineHeight: '1.5',
-                                wordBreak: 'break-word'
-                              }}>
-                                {node.hint}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {/* 新しいhints形式 */}
+                                {node.hints && node.hints.map((hint, index) => (
+                                  <div 
+                                    key={index}
+                                    style={{ 
+                                      backgroundColor: hint.type === 'command' ? '#1e1e1e' : '#fff3cd',
+                                      color: hint.type === 'command' ? '#00ff00' : '#856404',
+                                      padding: '12px', 
+                                      borderRadius: '4px',
+                                      fontFamily: hint.type === 'command' ? 'monospace' : 'inherit',
+                                      fontSize: '12px',
+                                      border: hint.type === 'text' ? '1px solid #ffc107' : 'none',
+                                      wordBreak: 'break-word',
+                                      whiteSpace: 'pre-wrap',
+                                      textAlign: hint.text.trim() === 'or' ? 'center' : 'left'
+                                    }}
+                                  >
+                                    {hint.text}
+                                  </div>
+                                ))}
+                                
+                                {/* 旧形式（後方互換性） */}
+                                {!node.hints && node.hint && node.hint.split('\n').map((hintLine, index) => {
+                                  const isTextLine = node.hint_type === 'command' && (
+                                    hintLine.trim().startsWith('設定値') ||
+                                    hintLine.trim().startsWith('※') ||
+                                    hintLine.trim().startsWith('・') ||
+                                    hintLine.trim() === 'or'
+                                  )
+                                  
+                                  const useCommandStyle = node.hint_type === 'command' && !isTextLine
+                                  
+                                  return (
+                                    <div 
+                                      key={index}
+                                      style={{ 
+                                        backgroundColor: useCommandStyle ? '#1e1e1e' : '#fff3cd',
+                                        color: useCommandStyle ? '#00ff00' : '#856404',
+                                        padding: '12px', 
+                                        borderRadius: '4px',
+                                        fontFamily: useCommandStyle ? 'monospace' : 'inherit',
+                                        fontSize: '12px',
+                                        border: !useCommandStyle ? '1px solid #ffc107' : 'none',
+                                        wordBreak: 'break-word',
+                                        whiteSpace: 'pre-wrap',
+                                        textAlign: hintLine.trim() === 'or' ? 'center' : 'left'
+                                      }}
+                                    >
+                                      {hintLine}
+                                    </div>
+                                  )
+                                })}
                               </div>
                             )}
                           </div>
