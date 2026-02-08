@@ -9,12 +9,19 @@ class Option(BaseModel):
     next_node_ids: Optional[List[str]] = None  # 複数の次ノードID
 
 
+class Hint(BaseModel):
+    """ヒント"""
+    text: str
+    type: str  # 'command' or 'text'
+
+
 class Node(BaseModel):
     """ツリーのノード"""
     id: str
     question: str
-    hint: Optional[str] = None
-    hint_type: Optional[str] = None  # 'command' or 'text'
+    hint: Optional[str] = None  # 後方互換性のため残す
+    hint_type: Optional[str] = None  # 後方互換性のため残す
+    hints: Optional[List[Hint]] = None  # 新しいヒント形式
     type: str  # 'select', 'multiselect', 'text'
     options: List[Option]
     description: Optional[str] = None

