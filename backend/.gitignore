@@ -12,6 +12,9 @@ ENV/
 # Poetry
 poetry.lock
 
+# Environment variables
+.env
+
 # IDE
 .vscode/
 .idea/

@@ -1,23 +1,40 @@
-from fastapi import APIRouter, HTTPException
-from app.models.tree import Tree
-import json
-from pathlib import Path
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from app.models.tree import Tree as TreeSchema
+from app.db.models import Tree as TreeModel
+from app.core.database import get_db
 
 router = APIRouter(prefix="/api/trees", tags=["trees"])
 
 
-@router.get("/{tree_id}")
-async def get_tree(tree_id: str):
-    """指定されたツリーの全データを取得"""
-    file_path = Path(f"app/data/trees/{tree_id}.json")
+@router.get("/{tree_id}", response_model=TreeSchema)
+async def get_tree(tree_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    指定されたツリーの全データを取得
     
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Tree not found")
+    Args:
+        tree_id: ツリーID（例: "nmap-basics-linux"）
+        db: データベースセッション（依存性注入）
     
-    with open(file_path, "r", encoding="utf-8") as f:
-        tree_data = json.load(f)
+    Returns:
+        Tree: ツリーデータ（Pydanticモデル）
     
-    # Pydanticモデルでバリデーション
-    tree = Tree(**tree_data)
+    Raises:
+        HTTPException: ツリーが見つからない場合（404）
+    """
+    # データベースからツリーを取得
+    result = await db.execute(
+        select(TreeModel).where(TreeModel.id == tree_id)
+    )
+    tree_model = result.scalar_one_or_none()
     
-    return tree
+    if not tree_model:
+        raise HTTPException(status_code=404, detail=f"Tree not found: {tree_id}")
+    
+    # SQLAlchemyモデル → Pydanticモデルに変換
+    tree_dict = tree_model.to_dict()
+    tree_schema = TreeSchema(**tree_dict)
+    
+    return tree_schema
