@@ -14,11 +14,24 @@ class Settings(BaseSettings):
     
     # アプリケーション設定
     APP_NAME: str = "TraceTree API"
-    DEBUG: bool = True
+    DEBUG: bool = False  # 本番環境ではFalse
     
     class Config:
         env_file = ".env"  # .envファイルから自動読み込み
         case_sensitive = True
+    
+    @property
+    def async_database_url(self) -> str:
+        """
+        DATABASE_URLを非同期ドライバ用に変換
+        postgres:// -> postgresql+asyncpg://
+        """
+        url = self.DATABASE_URL
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return url
 
 
 # グローバル設定インスタンス

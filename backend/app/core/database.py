@@ -9,7 +9,7 @@ from app.core.config import settings
 
 # 非同期エンジンの作成
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    settings.async_database_url,  # 非同期ドライバ用のURLを使用
     echo=settings.DEBUG,  # SQLログを出力（開発時のみ）
     future=True,
 )

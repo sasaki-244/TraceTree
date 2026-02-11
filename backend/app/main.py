@@ -9,14 +9,13 @@ app = FastAPI(
 )
 
 # CORS設定（フロントエンドからのアクセスを許可）
-# 本番環境とローカル開発環境の両方を許可
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # ローカル開発
-        "https://*.vercel.app",   # Vercelプレビュー
-        "*"                        # 本番環境（デプロイ後に具体的なドメインに変更推奨）
+        "http://localhost:5173",     # ローカル開発
+        "http://localhost:5174",     # ローカル開発（代替ポート）
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Vercel（本番・プレビュー）
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
