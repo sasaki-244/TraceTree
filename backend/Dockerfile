@@ -13,8 +13,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # アプリケーションコードをコピー
 COPY . .
 
+# 起動スクリプトに実行権限を付与
+RUN chmod +x start.sh
+
 # ポート8000を公開
 EXPOSE 8000
 
-# アプリケーションを起動
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 起動スクリプトを実行
+CMD ["./start.sh"]
