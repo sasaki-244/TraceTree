@@ -372,44 +372,94 @@ function App() {
     return levels
   }
 
-  if (loading) return <div style={{ padding: '20px' }}>読み込み中...</div>
-  if (error) return <div style={{ padding: '20px', color: 'red' }}>エラー: {error}</div>
-  if (!currentTree || !activeTab) return <div style={{ padding: '20px' }}>データがありません</div>
+  if (loading) return (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #141e30 0%, #243b55 100%)',
+      color: 'white',
+      fontSize: '18px',
+      fontWeight: '500'
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ animation: 'pulse 1.5s ease-in-out infinite', marginBottom: '20px', fontSize: '48px' }}>
+          🌲
+        </div>
+        <div>読み込み中...</div>
+      </div>
+    </div>
+  )
+  if (error) return (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      minHeight: '100vh',
+      background: '#f8f9fa',
+      padding: '20px'
+    }}>
+      <div style={{ 
+        backgroundColor: '#fff', 
+        padding: '40px', 
+        borderRadius: '12px', 
+        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+        textAlign: 'center',
+        maxWidth: '500px'
+      }}>
+        <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
+        <div style={{ color: '#dc3545', fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>エラーが発生しました</div>
+        <div style={{ color: '#666' }}>{error}</div>
+      </div>
+    </div>
+  )
+  if (!currentTree || !activeTab) return (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      minHeight: '100vh',
+      background: '#f8f9fa'
+    }}>
+      <div style={{ color: '#666', fontSize: '18px' }}>データがありません</div>
+    </div>
+  )
 
   const nodesByLevel = getNodesByLevel()
   const maxLevel = Math.max(...Object.keys(nodesByLevel).map(Number))
 
   return (
-    <div style={{ fontFamily: 'sans-serif', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* ダークヘッダー */}
+    <div style={{ fontFamily: 'sans-serif', minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+      {/* モダンなグラデーションヘッダー */}
       <header style={{
-        backgroundColor: '#1a1a1a',
-        borderBottom: '3px solid #00ff00',
-        padding: '20px 40px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+        background: 'linear-gradient(135deg, #141e30 0%, #243b55 100%)',
+        padding: '24px 40px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
       }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {/* 左側: ロゴとタイトル */}
           <div>
             <h1 style={{ 
               margin: 0, 
-              fontSize: '28px', 
-              fontWeight: 'bold',
-              color: '#00ff00',
+              fontSize: '32px', 
+              fontWeight: '700',
+              color: 'white',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              marginBottom: '5px'
+              marginBottom: '8px',
+              letterSpacing: '-0.5px'
             }}>
-              🌲 CTF Attack Path Mapper
+              TraceTree
             </h1>
             <p style={{ 
               margin: 0, 
-              fontSize: '13px', 
-              color: '#999',
-              fontFamily: 'monospace'
+              fontSize: '14px', 
+              color: 'rgba(255,255,255,0.9)',
+              fontWeight: '400'
             }}>
-              HTB & CTF Machine Exploitation Visualizer
+              CTF Attack Path Mapper - HTB Machine Exploitation Visualizer
             </p>
           </div>
 
@@ -418,42 +468,44 @@ function App() {
             {/* OS切り替えトグル */}
             <div style={{
               display: 'inline-flex',
-              backgroundColor: '#2a2a2a',
-              borderRadius: '8px',
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              borderRadius: '10px',
               padding: '4px',
-              border: '1px solid #444'
+              backdropFilter: 'blur(10px)'
             }}>
               <button
                 onClick={() => setOsMode('windows')}
                 style={{
-                  padding: '8px 20px',
+                  padding: '10px 24px',
                   fontSize: '14px',
-                  fontWeight: 'bold',
+                  fontWeight: '600',
                   border: 'none',
-                  borderRadius: '6px',
-                  backgroundColor: osMode === 'windows' ? '#00ff00' : 'transparent',
-                  color: osMode === 'windows' ? '#000' : '#999',
+                  borderRadius: '8px',
+                  backgroundColor: osMode === 'windows' ? 'white' : 'transparent',
+                  color: osMode === 'windows' ? '#667eea' : 'rgba(255,255,255,0.8)',
                   cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.3s ease',
+                  boxShadow: osMode === 'windows' ? '0 2px 8px rgba(0,0,0,0.15)' : 'none'
                 }}
               >
-                Windows
+                🪟 Windows
               </button>
               <button
                 onClick={() => setOsMode('linux')}
                 style={{
-                  padding: '8px 20px',
+                  padding: '10px 24px',
                   fontSize: '14px',
-                  fontWeight: 'bold',
+                  fontWeight: '600',
                   border: 'none',
-                  borderRadius: '6px',
-                  backgroundColor: osMode === 'linux' ? '#00ff00' : 'transparent',
-                  color: osMode === 'linux' ? '#000' : '#999',
+                  borderRadius: '8px',
+                  backgroundColor: osMode === 'linux' ? 'white' : 'transparent',
+                  color: osMode === 'linux' ? '#243b55' : 'rgba(255,255,255,0.8)',
                   cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.3s ease',
+                  boxShadow: osMode === 'linux' ? '0 2px 8px rgba(0,0,0,0.15)' : 'none'
                 }}
               >
-                Linux
+                🐧 Linux
               </button>
             </div>
           </div>
@@ -467,34 +519,35 @@ function App() {
         {/* Clearボタン & Flag獲得ボタン */}
         <div style={{ 
           display: 'flex', 
-          gap: '15px', 
-          marginBottom: '20px',
+          gap: '12px', 
+          marginBottom: '24px',
           justifyContent: 'flex-end'
         }}>
           {/* Clearボタン */}
           <button
             onClick={clearCurrentOs}
             style={{
-              padding: '10px 24px',
+              padding: '12px 28px',
               fontSize: '14px',
-              fontWeight: 'bold',
-              borderRadius: '6px',
-              border: '2px solid #dc3545',
+              fontWeight: '600',
+              borderRadius: '10px',
+              border: 'none',
               backgroundColor: 'white',
-              color: '#dc3545',
+              color: '#e53e3e',
               cursor: 'pointer',
-              transition: 'all 0.2s',
+              transition: 'all 0.3s ease',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '8px',
+              boxShadow: '0 2px 8px rgba(229,62,62,0.15)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#dc3545'
+              e.currentTarget.style.backgroundColor = '#e53e3e'
               e.currentTarget.style.color = 'white'
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'white'
-              e.currentTarget.style.color = '#dc3545'
+              e.currentTarget.style.color = '#e53e3e'
             }}
           >
             🗑️ Clear
@@ -504,26 +557,25 @@ function App() {
           <button
             onClick={() => setShowPathModal(true)}
             style={{
-              padding: '10px 24px',
+              padding: '12px 28px',
               fontSize: '14px',
-              fontWeight: 'bold',
-              borderRadius: '6px',
-              border: '2px solid #28a745',
-              backgroundColor: 'white',
-              color: '#28a745',
+              fontWeight: '600',
+              borderRadius: '10px',
+              border: 'none',
+              background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+              color: 'white',
               cursor: 'pointer',
-              transition: 'all 0.2s',
+              transition: 'all 0.3s ease',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '8px',
+              boxShadow: '0 2px 8px rgba(72,187,120,0.3)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#28a745'
-              e.currentTarget.style.color = 'white'
+              e.currentTarget.style.background = 'linear-gradient(135deg, #38a169 0%, #2f855a 100%)'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'white'
-              e.currentTarget.style.color = '#28a745'
+              e.currentTarget.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)'
             }}
           >
             🚩 Flag獲得
@@ -533,10 +585,9 @@ function App() {
         {/* タブバー */}
         <div style={{ 
           display: 'flex', 
-          gap: '5px', 
-          marginBottom: '30px',
-          borderBottom: '2px solid #ddd',
-          paddingBottom: '0'
+          gap: '8px', 
+          marginBottom: '32px',
+          alignItems: 'flex-end'
         }}>
           {tabs.map(tab => (
             <div
@@ -544,16 +595,30 @@ function App() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                backgroundColor: activeTabId === tab.id ? '#007bff' : '#f0f0f0',
-                color: activeTabId === tab.id ? 'white' : '#333',
-                borderRadius: '8px 8px 0 0',
+                gap: '10px',
+                padding: '12px 24px',
+                backgroundColor: activeTabId === tab.id ? 'white' : '#e2e8f0',
+                color: activeTabId === tab.id ? '#667eea' : '#64748b',
+                borderRadius: '10px 10px 0 0',
                 cursor: 'pointer',
-                fontWeight: activeTabId === tab.id ? 'bold' : 'normal',
-                transition: 'all 0.2s'
+                fontWeight: activeTabId === tab.id ? '600' : '500',
+                fontSize: '14px',
+                transition: 'all 0.3s ease',
+                boxShadow: activeTabId === tab.id ? '0 -2px 10px rgba(0,0,0,0.05)' : 'none',
+                border: activeTabId === tab.id ? 'none' : '1px solid #cbd5e1',
+                borderBottom: 'none'
               }}
               onClick={() => setActiveTabId(tab.id)}
+              onMouseEnter={(e) => {
+                if (activeTabId !== tab.id) {
+                  e.currentTarget.style.backgroundColor = '#cbd5e1'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTabId !== tab.id) {
+                  e.currentTarget.style.backgroundColor = '#e2e8f0'
+                }
+              }}
             >
               <span>{tab.name}</span>
               {tabs.length > 1 && (
@@ -565,10 +630,18 @@ function App() {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: activeTabId === tab.id ? 'white' : '#999',
+                    color: activeTabId === tab.id ? '#64748b' : '#94a3b8',
                     cursor: 'pointer',
-                    fontSize: '16px',
-                    padding: '0 4px'
+                    fontSize: '18px',
+                    padding: '0 4px',
+                    lineHeight: '1',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#e53e3e'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = activeTabId === tab.id ? '#64748b' : '#94a3b8'
                   }}
                 >
                   ×
@@ -582,22 +655,29 @@ function App() {
             <button
               onClick={addNewTab}
               style={{
-                padding: '10px 20px',
+                padding: '12px 24px',
                 backgroundColor: 'white',
-                border: '2px dashed #ccc',
-                borderRadius: '8px 8px 0 0',
+                border: '2px dashed #cbd5e1',
+                borderBottom: 'none',
+                borderRadius: '10px 10px 0 0',
                 cursor: 'pointer',
-                color: '#666',
-                fontWeight: 'bold',
-                transition: 'all 0.2s'
+                color: '#94a3b8',
+                fontWeight: '600',
+                fontSize: '14px',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#007bff'
-                e.currentTarget.style.color = '#007bff'
+                e.currentTarget.style.borderColor = '#243b55'
+                e.currentTarget.style.color = '#243b55'
+                e.currentTarget.style.backgroundColor = '#f8f9fa'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#ccc'
-                e.currentTarget.style.color = '#666'
+                e.currentTarget.style.borderColor = '#cbd5e1'
+                e.currentTarget.style.color = '#94a3b8'
+                e.currentTarget.style.backgroundColor = 'white'
               }}
             >
               + 新しいタブ
@@ -607,41 +687,65 @@ function App() {
 
         {/* ツリーコンテンツ */}
         {Array.from({ length: maxLevel + 1 }, (_, level) => (
-          <div key={level} style={{ marginBottom: '40px' }}>
+          <div key={level} style={{ marginBottom: '48px' }}>
             {nodesByLevel[level] && (
               <>
                 <div style={{ 
-                  fontSize: '18px', 
-                  fontWeight: 'bold', 
+                  fontSize: '14px', 
+                  fontWeight: '700', 
                   marginBottom: '20px',
-                  color: '#555'
+                  color: '#64748b',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
                 }}>
-                  レベル {level + 1}
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #141e30 0%, #243b55 100%)',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}>
+                    {level + 1}
+                  </div>
+                  <span>Level {level + 1}</span>
                 </div>
                 <div style={{ 
                   display: 'flex', 
-                  gap: '20px',
+                  gap: '24px',
                   flexWrap: 'wrap',
-                  marginBottom: '30px'
+                  marginBottom: '32px'
                 }}>
                   {nodesByLevel[level].map((nodeWithLevel) => {
                     const node = nodeWithLevel.node
                     const isTried = activeTab.triedNodes[node.id]
+                    const isDecided = activeTab.decidedNodes[node.id]
                     return (
                       <div 
                         key={node.id}
                         style={{ 
-                          border: '2px solid #333', 
-                          borderRadius: '8px', 
-                          padding: '20px',
-                          backgroundColor: '#f9f9f9',
-                          flex: '1 1 300px',
-                          minWidth: '300px',
-                          maxWidth: '400px',
-                          opacity: isTried ? 0.5 : 1,
-                          filter: isTried ? 'grayscale(80%)' : 'none',
-                          transition: 'opacity 0.3s, filter 0.3s',
-                          position: 'relative'
+                          border: isDecided ? '2px solid #667eea' : '1px solid #e2e8f0',
+                          borderRadius: '16px', 
+                          padding: '24px',
+                          backgroundColor: 'white',
+                          flex: '1 1 320px',
+                          minWidth: '320px',
+                          maxWidth: '420px',
+                          opacity: isTried ? 0.6 : 1,
+                          filter: isTried ? 'grayscale(70%)' : 'none',
+                          transition: 'all 0.3s ease',
+                          position: 'relative',
+                          boxShadow: isDecided 
+                            ? '0 4px 20px rgba(36,59,85,0.3)' 
+                            : '0 2px 8px rgba(0,0,0,0.05)',
+                          animation: 'slideUp 0.4s ease-out'
                         }}
                       >
                         {/* 試行済みボタン */}
@@ -649,69 +753,112 @@ function App() {
                           onClick={() => toggleTried(node.id)}
                           style={{
                             position: 'absolute',
-                            top: '10px',
-                            right: '10px',
-                            padding: '4px 10px',
+                            top: '16px',
+                            right: '16px',
+                            padding: '6px 12px',
                             fontSize: '11px',
-                            fontWeight: 'bold',
-                            borderRadius: '4px',
-                            border: isTried ? '2px solid #dc3545' : '2px solid #6c757d',
-                            backgroundColor: isTried ? '#dc3545' : 'white',
-                            color: isTried ? 'white' : '#6c757d',
+                            fontWeight: '600',
+                            borderRadius: '6px',
+                            border: 'none',
+                            backgroundColor: isTried ? '#feb2b2' : '#e2e8f0',
+                            color: isTried ? '#742a2a' : '#64748b',
                             cursor: 'pointer',
                             transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = isTried ? '#fc8181' : '#cbd5e1'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = isTried ? '#feb2b2' : '#e2e8f0'
                           }}
                         >
                           {isTried ? '✗ 試行済み' : '✗ 失敗'}
                         </button>
 
                         <h3 style={{ 
-                          marginBottom: '15px', 
-                          fontSize: '16px',
-                          marginRight: '80px'
+                          marginBottom: '16px',
+                          fontSize: '18px',
+                          fontWeight: '600',
+                          marginRight: '90px',
+                          color: '#1a202c',
+                          lineHeight: '1.4'
                         }}>
                           {node.question}
                         </h3>
                         
                         {(node.hint || node.hints) && (
-                          <div style={{ marginBottom: '15px' }}>
+                          <div style={{ marginBottom: '20px' }}>
                             <button
                               onClick={() => toggleHint(node.id)}
                               style={{
-                                padding: '6px 15px',
-                                fontSize: '12px',
-                                fontWeight: 'bold',
-                                borderRadius: '4px',
-                                border: '2px solid #ffc107',
-                                backgroundColor: activeTab.showHints[node.id] ? '#ffc107' : 'white',
-                                color: activeTab.showHints[node.id] ? 'white' : '#ffc107',
+                                padding: '8px 16px',
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                borderRadius: '8px',
+                                border: 'none',
+                                background: activeTab.showHints[node.id] 
+                                  ? 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)'
+                                  : '#fef5e7',
+                                color: activeTab.showHints[node.id] ? 'white' : '#c05621',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                marginBottom: '8px'
+                                transition: 'all 0.3s ease',
+                                marginBottom: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: activeTab.showHints[node.id]
+                                  ? '0 2px 8px rgba(237,137,54,0.3)'
+                                  : 'none'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!activeTab.showHints[node.id]) {
+                                  e.currentTarget.style.backgroundColor = '#feebc8'
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!activeTab.showHints[node.id]) {
+                                  e.currentTarget.style.backgroundColor = '#fef5e7'
+                                }
                               }}
                             >
                               💡 {activeTab.showHints[node.id] ? 'ヒントを隠す' : 'ヒントを表示'}
                             </button>
                             
                             {activeTab.showHints[node.id] && (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {/* 新しいhints形式 */}
                                 {node.hints && node.hints.map((hint, index) => (
                                   <div 
                                     key={index}
                                     style={{ 
-                                      backgroundColor: hint.type === 'command' ? '#1e1e1e' : '#fff3cd',
-                                      color: hint.type === 'command' ? '#00ff00' : '#856404',
-                                      padding: '12px', 
-                                      borderRadius: '4px',
-                                      fontFamily: hint.type === 'command' ? 'monospace' : 'inherit',
-                                      fontSize: '12px',
-                                      border: hint.type === 'text' ? '1px solid #ffc107' : 'none',
+                                      backgroundColor: hint.type === 'command' ? '#1a202c' : '#fef5e7',
+                                      color: hint.type === 'command' ? '#68d391' : '#744210',
+                                      padding: hint.type === 'command' ? '16px' : '12px',
+                                      borderRadius: '8px',
+                                      fontFamily: hint.type === 'command' ? "'Monaco', 'Menlo', 'Consolas', monospace" : 'inherit',
+                                      fontSize: hint.type === 'command' ? '13px' : '13px',
+                                      border: hint.type === 'text' ? '1px solid #fbd38d' : 'none',
                                       wordBreak: 'break-word',
                                       whiteSpace: 'pre-wrap',
-                                      textAlign: hint.text.trim() === 'or' ? 'center' : 'left'
+                                      textAlign: hint.text.trim() === 'or' ? 'center' : 'left',
+                                      boxShadow: hint.type === 'command' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
+                                      position: 'relative',
+                                      lineHeight: '1.6'
                                     }}
                                   >
+                                    {hint.type === 'command' && (
+                                      <div style={{
+                                        position: 'absolute',
+                                        top: '8px',
+                                        right: '8px',
+                                        fontSize: '10px',
+                                        color: '#718096',
+                                        fontWeight: '600',
+                                        letterSpacing: '0.5px'
+                                      }}>
+                                        TERMINAL
+                                      </div>
+                                    )}
                                     {hint.text}
                                   </div>
                                 ))}
@@ -731,18 +878,34 @@ function App() {
                                     <div 
                                       key={index}
                                       style={{ 
-                                        backgroundColor: useCommandStyle ? '#1e1e1e' : '#fff3cd',
-                                        color: useCommandStyle ? '#00ff00' : '#856404',
-                                        padding: '12px', 
-                                        borderRadius: '4px',
-                                        fontFamily: useCommandStyle ? 'monospace' : 'inherit',
-                                        fontSize: '12px',
-                                        border: !useCommandStyle ? '1px solid #ffc107' : 'none',
+                                        backgroundColor: useCommandStyle ? '#1a202c' : '#fef5e7',
+                                        color: useCommandStyle ? '#68d391' : '#744210',
+                                        padding: useCommandStyle ? '16px' : '12px',
+                                        borderRadius: '8px',
+                                        fontFamily: useCommandStyle ? "'Monaco', 'Menlo', 'Consolas', monospace" : 'inherit',
+                                        fontSize: useCommandStyle ? '13px' : '13px',
+                                        border: !useCommandStyle ? '1px solid #fbd38d' : 'none',
                                         wordBreak: 'break-word',
                                         whiteSpace: 'pre-wrap',
-                                        textAlign: hintLine.trim() === 'or' ? 'center' : 'left'
+                                        textAlign: hintLine.trim() === 'or' ? 'center' : 'left',
+                                        boxShadow: useCommandStyle ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
+                                        position: 'relative',
+                                        lineHeight: '1.6'
                                       }}
                                     >
+                                      {useCommandStyle && (
+                                        <div style={{
+                                          position: 'absolute',
+                                          top: '8px',
+                                          right: '8px',
+                                          fontSize: '10px',
+                                          color: '#718096',
+                                          fontWeight: '600',
+                                          letterSpacing: '0.5px'
+                                        }}>
+                                          TERMINAL
+                                        </div>
+                                      )}
                                       {hintLine}
                                     </div>
                                   )
@@ -752,21 +915,35 @@ function App() {
                           </div>
                         )}
 
-                        <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           <select 
                             value={activeTab.selectedOptions[node.id] || ''}
                             onChange={(e) => updateActiveTab({
                               selectedOptions: { ...activeTab.selectedOptions, [node.id]: e.target.value }
                             })}
                             style={{ 
-                              padding: '8px', 
+                              padding: '12px 16px', 
                               fontSize: '14px',
-                              borderRadius: '4px',
-                              border: '1px solid #ccc',
-                              width: '100%'
+                              borderRadius: '8px',
+                              border: '2px solid #e2e8f0',
+                              width: '100%',
+                              backgroundColor: 'white',
+                              color: '#1a202c',
+                              fontWeight: '500',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              outline: 'none'
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#243b55'
+                              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(36,59,85,0.15)'
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = '#e2e8f0'
+                              e.currentTarget.style.boxShadow = 'none'
                             }}
                           >
-                            <option value="">選択してください</option>
+                            <option value="">選択してください...</option>
                             {node.options.map(option => (
                               <option key={option.id} value={option.id}>
                                 {option.label}
@@ -778,18 +955,33 @@ function App() {
                             onClick={() => handleDecision(node.id, nodeWithLevel.level)}
                             disabled={!activeTab.selectedOptions[node.id] || isTried}
                             style={{
-                              padding: '8px 20px',
+                              padding: '12px 24px',
                               fontSize: '14px',
-                              fontWeight: 'bold',
-                              borderRadius: '4px',
+                              fontWeight: '600',
+                              borderRadius: '8px',
                               border: 'none',
-                              backgroundColor: (activeTab.selectedOptions[node.id] && !isTried) ? '#007bff' : '#ccc',
+                              background: (activeTab.selectedOptions[node.id] && !isTried) 
+                                ? 'linear-gradient(135deg, #141e30 0%, #243b55 100%)'
+                                : '#cbd5e1',
                               color: 'white',
                               cursor: (activeTab.selectedOptions[node.id] && !isTried) ? 'pointer' : 'not-allowed',
-                              transition: 'background-color 0.2s'
+                              transition: 'all 0.3s ease',
+                              boxShadow: (activeTab.selectedOptions[node.id] && !isTried)
+                                ? '0 2px 8px rgba(36,59,85,0.4)'
+                                : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (activeTab.selectedOptions[node.id] && !isTried) {
+                                e.currentTarget.style.background = 'linear-gradient(135deg, #0f1620 0%, #1a2d44 100%)'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (activeTab.selectedOptions[node.id] && !isTried) {
+                                e.currentTarget.style.background = 'linear-gradient(135deg, #141e30 0%, #243b55 100%)'
+                              }
                             }}
                           >
-                            決定
+                            ✓ 決定
                           </button>
                         </div>
                       </div>
@@ -812,7 +1004,8 @@ function App() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -824,14 +1017,15 @@ function App() {
           <div
             style={{
               backgroundColor: 'white',
-              borderRadius: '12px',
+              borderRadius: '20px',
               padding: '40px',
-              maxWidth: '600px',
+              maxWidth: '700px',
               width: '90%',
-              maxHeight: '80vh',
+              maxHeight: '85vh',
               overflowY: 'auto',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-              position: 'relative'
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+              position: 'relative',
+              animation: 'slideUp 0.4s ease-out'
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -840,27 +1034,53 @@ function App() {
               onClick={() => setShowPathModal(false)}
               style={{
                 position: 'absolute',
-                top: '15px',
-                right: '15px',
-                background: 'none',
+                top: '20px',
+                right: '20px',
+                background: '#f1f5f9',
                 border: 'none',
-                fontSize: '24px',
+                fontSize: '20px',
                 cursor: 'pointer',
-                color: '#999',
-                padding: '5px 10px'
+                color: '#64748b',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#e2e8f0'
+                e.currentTarget.style.color = '#1e293b'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#f1f5f9'
+                e.currentTarget.style.color = '#64748b'
               }}
             >
               ×
             </button>
 
-            <h2 style={{ marginBottom: '30px', color: '#28a745', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ 
+              marginBottom: '32px', 
+              background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              fontSize: '28px',
+              fontWeight: '700'
+            }}>
               🚩 攻略パス
             </h2>
 
             {getSelectedPath().length === 0 ? (
-              <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>
-                まだノードが選択されていません
-              </p>
+              <div style={{ 
+                color: '#94a3b8', 
+                textAlign: 'center', 
+                padding: '60px 20px',
+                fontSize: '16px'
+              }}>
+                <div style={{ fontSize: '64px', marginBottom: '20px', opacity: 0.5 }}>📝</div>
+                <div>まだノードが選択されていません</div>
+              </div>
             ) : (
               <div>
                 {getSelectedPath().map((nodeWithLevel, index) => {
@@ -873,37 +1093,57 @@ function App() {
                     <div key={node.id}>
                       <div
                         style={{
-                          border: '2px solid #28a745',
-                          borderRadius: '8px',
-                          padding: '20px',
-                          backgroundColor: '#f8f9fa',
-                          marginBottom: '15px'
+                          border: '2px solid #48bb78',
+                          borderRadius: '12px',
+                          padding: '24px',
+                          backgroundColor: '#f0fdf4',
+                          marginBottom: '16px',
+                          transition: 'all 0.3s ease',
+                          position: 'relative',
+                          overflow: 'hidden'
                         }}
                       >
+                        {/* 背景装飾 */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '-10px',
+                          right: '-10px',
+                          width: '80px',
+                          height: '80px',
+                          background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                          opacity: '0.05',
+                          borderRadius: '50%'
+                        }} />
+                        
                         <div style={{ 
-                          fontSize: '12px', 
-                          color: '#28a745', 
-                          fontWeight: 'bold',
-                          marginBottom: '8px'
+                          fontSize: '11px', 
+                          color: '#38a169', 
+                          fontWeight: '700',
+                          marginBottom: '10px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '1px'
                         }}>
                           STEP {index + 1}
                         </div>
                         <div style={{ 
-                          fontSize: '16px', 
-                          fontWeight: 'bold',
-                          marginBottom: '10px'
+                          fontSize: '17px', 
+                          fontWeight: '600',
+                          marginBottom: '12px',
+                          color: '#1a202c',
+                          lineHeight: '1.5'
                         }}>
                           {node.question}
                         </div>
                         {selectedOption && (
                           <div style={{
-                            backgroundColor: '#28a745',
+                            background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
                             color: 'white',
-                            padding: '8px 15px',
-                            borderRadius: '4px',
+                            padding: '10px 18px',
+                            borderRadius: '8px',
                             display: 'inline-block',
                             fontSize: '14px',
-                            fontWeight: 'bold'
+                            fontWeight: '600',
+                            boxShadow: '0 2px 8px rgba(72,187,120,0.3)'
                           }}>
                             ✓ {selectedOption.label}
                           </div>
@@ -914,9 +1154,10 @@ function App() {
                       {index < getSelectedPath().length - 1 && (
                         <div style={{ 
                           textAlign: 'center', 
-                          fontSize: '24px',
-                          color: '#28a745',
-                          margin: '10px 0'
+                          fontSize: '28px',
+                          color: '#48bb78',
+                          margin: '8px 0',
+                          fontWeight: 'bold'
                         }}>
                           ↓
                         </div>
@@ -926,15 +1167,17 @@ function App() {
                 })}
 
                 <div style={{ 
-                  marginTop: '30px', 
-                  padding: '15px',
-                  backgroundColor: '#d4edda',
-                  borderRadius: '8px',
+                  marginTop: '32px', 
+                  padding: '20px',
+                  background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                  borderRadius: '12px',
                   textAlign: 'center',
-                  color: '#155724',
-                  fontWeight: 'bold'
+                  color: 'white',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  boxShadow: '0 4px 12px rgba(72,187,120,0.3)'
                 }}>
-                  🎉 合計 {getSelectedPath().length} ステップ
+                  🎉 合計 {getSelectedPath().length} ステップで攻略成功！
                 </div>
               </div>
             )}
