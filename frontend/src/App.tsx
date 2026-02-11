@@ -183,15 +183,18 @@ function App() {
     setActiveTabId(initialTabId)
   }
 
+  // API URLを環境変数から取得（デフォルトはlocalhost）
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
   // 初回マウント時に両方のツリーデータを取得
   useEffect(() => {
     setLoading(true)
     Promise.all([
-      fetch('http://localhost:8000/api/trees/nmap-basics-linux').then(res => {
+      fetch(`${API_URL}/api/trees/nmap-basics-linux`).then(res => {
         if (!res.ok) throw new Error('Failed to fetch linux tree')
         return res.json()
       }),
-      fetch('http://localhost:8000/api/trees/nmap-basics-windows').then(res => {
+      fetch(`${API_URL}/api/trees/nmap-basics-windows`).then(res => {
         if (!res.ok) throw new Error('Failed to fetch windows tree')
         return res.json()
       })
