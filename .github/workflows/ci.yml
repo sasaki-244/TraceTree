@@ -18,10 +18,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@57ded4dd67945f4c794f4d4e6e52e2b83a2374e9 # v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
@@ -63,10 +63,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
@@ -104,12 +104,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@4baed5484b46f113881884f89e9f6d9a464241b8 # v2
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -127,18 +127,18 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@6bb031a393a6a964af9397dd14f29d9d20134537 # v4
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@6bb031a393a6a964af9397dd14f29d9d20134537 # v4
+        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@6bb031a393a6a964af9397dd14f29d9d20134537 # v4
+        uses: github/codeql-action/analyze@v4
 
   # デプロイジョブ（CI成功後に実行）
   deploy:
@@ -153,7 +153,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        uses: actions/checkout@v4
 
       # Render（バックエンド）へのデプロイ
       - name: Deploy to Render (Backend)
@@ -169,7 +169,7 @@ jobs:
 
       # Vercel（フロントエンド）へのデプロイ
       - name: Setup Node.js for Vercel
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
