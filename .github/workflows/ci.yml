@@ -182,9 +182,9 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_USER_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          cd frontend
-          vercel --version
-          vercel deploy --prod --yes --token=$VERCEL_TOKEN
+          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          vercel build --prod --token=$VERCEL_TOKEN
+          vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
 
   # trivy-image-scan:
   #   name: Container Vulnerability Scan (Trivy)
