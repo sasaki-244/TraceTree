@@ -1,0 +1,7 @@
+# Trivy ignore file
+# 注意: Trivyスキャンは現在無効化されています（ci.ymlでコメントアウト済み）
+# 将来的にTrivyスキャンを有効化する場合に備えて残しています
+
+# jaraco.context - 間接依存で、本プロジェクトでは直接使用していない
+# Path traversal via malicious tar archives
+# CVE-2026-23949

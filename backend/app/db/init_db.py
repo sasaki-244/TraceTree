@@ -4,7 +4,7 @@
 """
 import asyncio
 from app.core.database import engine, Base
-from app.db.models import Tree  # モデルをインポート（テーブル定義を読み込むため）
+# from app.db.models import Tree  # モデルをインポート（テーブル定義を読み込むため）
 
 
 async def init_db():

@@ -29,45 +29,40 @@ function App() {
   // 現在表示中のツリー
   const [currentTree, setCurrentTree] = useState<Tree | null>(null)
   
+  const createDefaultTab = (): TabData => ({
+    id: `tab-${Date.now()}`,
+    name: 'Set 1',
+    nodeHierarchy: [],
+    selectedOptions: {},
+    showHints: {},
+    triedNodes: {},
+    decidedNodes: {}
+  })
+
   // LocalStorageから初期データを読み込む、なければデフォルト値
-  const getInitialTabs = (os: 'windows' | 'linux'): TabData[] => {
+  const getInitialTabState = (os: 'windows' | 'linux'): { tabs: TabData[], activeTabId: string } => {
     const savedData = localStorage.getItem(`tracetree-tabs-${os}`)
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData)
         if (parsed.tabs && parsed.tabs.length > 0) {
-          return parsed.tabs
+          const fallbackActiveTabId = parsed.tabs[0].id
+          const savedActiveTabId = parsed.activeTabId
+          const hasSavedActiveTab = parsed.tabs.some((tab: TabData) => tab.id === savedActiveTabId)
+          return {
+            tabs: parsed.tabs,
+            activeTabId: hasSavedActiveTab ? savedActiveTabId : fallbackActiveTabId
+          }
         }
       } catch (e) {
         console.error('Failed to load saved tabs:', e)
       }
     }
-    // LocalStorageにデータがない場合はデフォルトのタブを作成
-    const initialTabId = `tab-${Date.now()}`
-    return [{
-      id: initialTabId,
-      name: 'Set 1',
-      nodeHierarchy: [],
-      selectedOptions: {},
-      showHints: {},
-      triedNodes: {},
-      decidedNodes: {}
-    }]
-  }
-
-  const getInitialActiveTabId = (os: 'windows' | 'linux'): string => {
-    const savedData = localStorage.getItem(`tracetree-tabs-${os}`)
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData)
-        if (parsed.activeTabId) {
-          return parsed.activeTabId
-        }
-      } catch (e) {
-        console.error('Failed to load saved activeTabId:', e)
-      }
+    const defaultTab = createDefaultTab()
+    return {
+      tabs: [defaultTab],
+      activeTabId: defaultTab.id
     }
-    return getInitialTabs(os)[0].id
   }
 
   // 初期OSモードをLocalStorageから読み込む
@@ -78,10 +73,11 @@ function App() {
   }
 
   const initialOsMode = getInitialOsMode()
+  const initialTabState = getInitialTabState(initialOsMode)
   
   const [osMode, setOsMode] = useState<'windows' | 'linux'>(initialOsMode)
-  const [tabs, setTabs] = useState<TabData[]>(() => getInitialTabs(initialOsMode))
-  const [activeTabId, setActiveTabId] = useState<string>(() => getInitialActiveTabId(initialOsMode))
+  const [tabs, setTabs] = useState<TabData[]>(initialTabState.tabs)
+  const [activeTabId, setActiveTabId] = useState<string>(initialTabState.activeTabId)
   const [showPathModal, setShowPathModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -121,8 +117,7 @@ function App() {
     setCurrentTree(newTree)
     
     // LocalStorageから該当OSのタブデータを読み込む
-    const newTabs = getInitialTabs(osMode)
-    const newActiveTabId = getInitialActiveTabId(osMode)
+    const { tabs: newTabs, activeTabId: newActiveTabId } = getInitialTabState(osMode)
     
     // タブデータを復元
     setTabs(newTabs.map(tab => {
@@ -150,7 +145,7 @@ function App() {
   
   // アクティブなタブのデータを更新するヘルパー関数
   const updateActiveTab = (updates: Partial<TabData>) => {
-    setTabs(tabs.map(tab => 
+    setTabs(prevTabs => prevTabs.map(tab => 
       tab.id === activeTabId ? { ...tab, ...updates } : tab
     ))
   }
@@ -231,25 +226,28 @@ function App() {
 
   // 新しいタブを追加
   const addNewTab = () => {
-    if (tabs.length >= 10) return // 最大10個
-    
-    const newTabNumber = tabs.length + 1
-    const newTab: TabData = {
-      id: `tab-${Date.now()}`, // タイムスタンプでユニークなIDを生成
-      name: `Set ${newTabNumber}`,
-      nodeHierarchy: currentTree ? [{
-        node: currentTree.nodes[currentTree.root_node_id],
-        level: 0,
-        parentId: null
-      }] : [],
-      selectedOptions: {},
-      showHints: {},
-      triedNodes: {},
-      decidedNodes: {}
-    }
-    
-    setTabs([...tabs, newTab])
-    setActiveTabId(newTab.id)
+    const newTabId = `tab-${Date.now()}`
+    setTabs(prevTabs => {
+      if (prevTabs.length >= 10) return prevTabs // 最大10個
+
+      const newTabNumber = prevTabs.length + 1
+      const newTab: TabData = {
+        id: newTabId,
+        name: `Set ${newTabNumber}`,
+        nodeHierarchy: currentTree ? [{
+          node: currentTree.nodes[currentTree.root_node_id],
+          level: 0,
+          parentId: null
+        }] : [],
+        selectedOptions: {},
+        showHints: {},
+        triedNodes: {},
+        decidedNodes: {}
+      }
+
+      return [...prevTabs, newTab]
+    })
+    setActiveTabId(newTabId)
   }
 
   // タブを削除
