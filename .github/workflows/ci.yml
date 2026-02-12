@@ -9,9 +9,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
-  id-token: write
-  security-events: write
 
 jobs:
   # バックエンドのテスト
@@ -24,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
@@ -119,6 +116,9 @@ jobs:
   codeql:
     name: SAST (CodeQL)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     
     strategy:
       fail-fast: false
@@ -130,15 +130,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
   # デプロイジョブ（CI成功後に実行）
   deploy:
@@ -146,6 +146,8 @@ jobs:
     # mainブランチへのプッシュ時のみ実行（PRではスキップ）
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     # すべてのCIジョブが成功した後に実行
     needs: [test-backend, test-frontend, secret-scan, codeql]
 
@@ -163,17 +165,26 @@ jobs:
           curl -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
             -H "Authorization: Bearer ${RENDER_API_KEY}" \
             -H "Content-Type: application/json" \
-            -f || echo "Render deployment triggered (may already be in progress)"
+            --fail --silent --show-error
 
       # Vercel（フロントエンド）へのデプロイ
-      - name: Deploy to Vercel (Frontend)
-        uses: amondnet/vercel-action@v25
+      - name: Setup Node.js for Vercel
+        uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_USER_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: ./frontend
+          node-version: '18'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@39.1.0
+
+      - name: Deploy to Vercel (Frontend)
+        working-directory: ./frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_USER_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          vercel --version
+          vercel deploy --prod --yes --token=$VERCEL_TOKEN
 
   # trivy-image-scan:
   #   name: Container Vulnerability Scan (Trivy)
