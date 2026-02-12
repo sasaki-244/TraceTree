@@ -1,0 +1,6 @@
+# Trivy ignore file
+# 特定のCVEを無視する設定
+
+# jaraco.context - 間接依存で、本プロジェクトでは直接使用していない
+# Path traversal via malicious tar archives
+CVE-2026-23949
