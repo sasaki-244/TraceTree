@@ -14,8 +14,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",     # ローカル開発
         "http://localhost:5174",     # ローカル開発（代替ポート）
+        "https://tracetree.vercel.app",  # 本番フロントエンド
     ],
-    allow_origin_regex=r"https://.*\.vercel\.app",  # Vercel（本番・プレビュー）
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
