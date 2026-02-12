@@ -1,6 +1,7 @@
 fastapi>=0.115.0
 starlette>=0.40.0  # CVE-2024-47874対策: DoS脆弱性修正
 wheel>=0.46.2  # CVE-2026-24049対策: 権限昇格/任意コード実行脆弱性修正
+httpx>=0.24.0  # FastAPI TestClientに必要
 uvicorn[standard]==0.27.0
 pydantic==2.5.0
 pydantic-settings==2.1.0
