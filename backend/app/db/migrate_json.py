@@ -40,7 +40,7 @@ async def migrate_json_to_db():
             
             if existing_tree:
                 print(f"  既に存在します: {tree_data['id']}")
-                print(f"  更新します...")
+                print("  更新します...")
                 existing_tree.title = tree_data["title"]
                 existing_tree.description = tree_data["description"]
                 existing_tree.root_node_id = tree_data["root_node_id"]
