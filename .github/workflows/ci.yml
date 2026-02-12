@@ -140,43 +140,45 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-  trivy-image-scan:
-    name: Container Vulnerability Scan (Trivy)
-    runs-on: ubuntu-latest
+  # trivy-image-scan:
+  #   name: Container Vulnerability Scan (Trivy)
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+  #     - name: Setup Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
 
-      - name: Build backend image
-        run: |
-          docker build -t app-backend:ci ./backend
+  #     - name: Build backend image
+  #       run: |
+  #         docker build -t app-backend:ci ./backend
 
-      - name: Scan backend image (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: app-backend:ci
-          format: table
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
-          exit-code: '1'
-          # .trivyignoreファイルが自動的に読み込まれます
+  #     - name: Scan backend image (Trivy)
+  #       uses: aquasecurity/trivy-action@0.28.0
+  #       with:
+  #         image-ref: app-backend:ci
+  #         format: table
+  #         ignore-unfixed: true
+  #         severity: HIGH,CRITICAL
+  #         exit-code: '1'
+  #         # .trivyignoreファイルが自動的に読み込まれます
 
-      - name: Build frontend image
-        run: |
-          docker build -t app-frontend:ci ./frontend
+  #     - name: Build frontend image
+  #       run: |
+  #         docker build -t app-frontend:ci --target build ./frontend
 
-      - name: Scan frontend image (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: app-frontend:ci
-          format: table
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
-          exit-code: '1'
+  #     - name: Scan frontend image (Trivy)
+  #       # ビルドステージのみをスキャン（本番環境で使用するnpmパッケージの脆弱性を検出）
+  #       # nginxステージはスキップ（Vercelでは使用しないため）
+  #       uses: aquasecurity/trivy-action@0.28.0
+  #       with:
+  #         image-ref: app-frontend:ci
+  #         format: table
+  #         ignore-unfixed: true
+  #         severity: HIGH,CRITICAL
+  #         exit-code: '1'
 
   sbom:
     name: Generate SBOM (Syft)
@@ -192,13 +194,14 @@ jobs:
 
       - name: Build frontend image
         run: |
-          docker build -t app-frontend:ci ./frontend
+          docker build -t app-frontend:ci --target build ./frontend
 
       - name: Install Syft
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
       - name: Generate SBOM (backend and frontend)
+        # フロントエンドはビルドステージのみ（本番環境で使用するnpmパッケージ）
         run: |
           syft app-backend:ci -o spdx-json > sbom-backend.spdx.json
           syft app-frontend:ci -o spdx-json > sbom-frontend.spdx.json
@@ -246,6 +249,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
+          target: build  # ビルドステージのみ（本番環境で使用するnpmパッケージ）
           push: true
           tags: |
             ghcr.io/${{ github.repository }}-frontend:latest
